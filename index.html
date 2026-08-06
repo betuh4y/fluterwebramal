@@ -1,0 +1,4064 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0e1420">
+    <title>Central de Ramais PDV</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+      :root {
+        --bg: #EEF1F4;
+        --card: #FFFFFF;
+        --ink: #1E2A30;
+        --muted: #5F6E77;
+        --line: #DCE3E8;
+        --brand: #12403D;
+        --brand-soft: #E4EEEC;
+        --call: #177A48;
+        --call-soft: #E4F2EA;
+        --danger: #B93A2C;
+        --danger-soft: #F8E9E6;
+        --warn: #B26A00;
+        --warn-soft: #F7EEDD;
+        --hold: #5B6B7A;
+        --mono: 'IBM Plex Mono', ui-monospace, monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0
+      }
+
+      body {
+        font-family: 'IBM Plex Sans', system-ui, sans-serif;
+        background: var(--bg);
+        color: var(--ink);
+        min-height: 100vh;
+        font-size: 15px
+      }
+
+      .i {
+        width: 1.05em;
+        height: 1.05em;
+        vertical-align: -.16em;
+        flex: none
+      }
+
+      /* topo */
+      .topbar {
+        background: var(--brand);
+        color: #fff;
+        padding: 0 16px
+      }
+
+      .topbar .in {
+        max-width: 640px;
+        margin: 0 auto;
+        height: 54px;
+        display: flex;
+        align-items: center;
+        gap: 10px
+      }
+
+      .topbar .logo {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, .14);
+        display: flex;
+        align-items: center;
+        justify-content: center
+      }
+
+      .topbar .logo .i {
+        width: 16px;
+        height: 16px
+      }
+
+      .topbar b {
+        font-weight: 600;
+        font-size: 15px;
+        letter-spacing: .2px
+      }
+
+      .topbar small {
+        display: block;
+        font-size: 11px;
+        opacity: .65;
+        font-weight: 400;
+        margin-top: 1px
+      }
+
+      .conn {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        opacity: .9
+      }
+
+      .conn .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #E4574A
+      }
+
+      .conn .dot.on {
+        background: #3ECF7A
+      }
+
+      #hUser {
+        font-size: 12px;
+        background: rgba(255, 255, 255, .12);
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-family: var(--mono)
+      }
+
+      /* tabs */
+      .tabsbar {
+        background: var(--brand);
+        padding: 0 16px 0
+      }
+
+      .tabs {
+        max-width: 640px;
+        margin: 0 auto;
+        display: flex;
+        gap: 2px
+      }
+
+      .tabs button {
+        flex: 1;
+        padding: 11px 4px 12px;
+        border: none;
+        background: transparent;
+        color: rgba(255, 255, 255, .62);
+        font: inherit;
+        font-weight: 500;
+        font-size: 13px;
+        cursor: pointer;
+        position: relative;
+        border-bottom: 2.5px solid transparent;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px
+      }
+
+      .tabs button.on {
+        color: #fff;
+        border-bottom-color: #3ECF7A
+      }
+
+      .badge {
+        position: absolute;
+        top: 6px;
+        right: 8px;
+        background: #E4574A;
+        color: #fff;
+        font-size: 10px;
+        min-width: 16px;
+        height: 16px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 4px;
+        font-weight: 600
+      }
+
+      /* layout */
+      .wrap {
+        max-width: 640px;
+        margin: 0 auto;
+        padding: 18px 16px 40px
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 18px;
+        margin-bottom: 14px;
+        box-shadow: 0 1px 2px rgba(20, 40, 50, .04)
+      }
+
+      .card>label:first-child,
+      .sect {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: .8px;
+        margin: 0 0 12px;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 10px
+      }
+
+      label {
+        font-size: 12px;
+        color: var(--muted);
+        display: block;
+        margin: 14px 0 6px;
+        font-weight: 500
+      }
+
+      input,
+      select {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: #FBFCFD;
+        color: var(--ink);
+        font: inherit;
+        font-size: 15px;
+        transition: border-color .15s
+      }
+
+      input:focus,
+      select:focus {
+        outline: none;
+        border-color: var(--brand);
+        background: #fff
+      }
+
+      button.b {
+        width: 100%;
+        padding: 11px;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        font: inherit;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        margin-top: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px
+      }
+
+      .bp {
+        background: var(--brand);
+        color: #fff
+      }
+
+      .bg {
+        background: var(--call);
+        color: #fff
+      }
+
+      .br {
+        background: var(--danger);
+        color: #fff
+      }
+
+      .bo {
+        background: #fff;
+        color: var(--warn);
+        border-color: var(--warn) !important
+      }
+
+      .bgr {
+        background: #fff;
+        color: var(--ink);
+        border-color: var(--line) !important
+      }
+
+      button:hover {
+        filter: brightness(.97)
+      }
+
+      button:disabled {
+        opacity: .45;
+        cursor: not-allowed
+      }
+
+      .row {
+        display: flex;
+        gap: 8px
+      }
+
+      .row>* {
+        flex: 1
+      }
+
+      .sub {
+        color: var(--muted);
+        font-size: 13px;
+        text-align: center
+      }
+
+      .big {
+        font-size: 34px;
+        font-weight: 600;
+        text-align: center;
+        letter-spacing: 1px;
+        font-family: var(--mono);
+        color: var(--brand)
+      }
+
+      /* listas */
+      .item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 4px;
+        border-bottom: 1px solid var(--line)
+      }
+
+      .item:last-child {
+        border-bottom: none
+      }
+
+      .item .num {
+        font-family: var(--mono);
+        font-weight: 600;
+        font-size: 14px;
+        min-width: 52px;
+        background: var(--brand-soft);
+        color: var(--brand);
+        border-radius: 6px;
+        text-align: center;
+        padding: 5px 0
+      }
+
+      .item .nome {
+        flex: 1;
+        color: var(--ink);
+        font-size: 13.5px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap
+      }
+
+      .item .nome small {
+        color: var(--muted)
+      }
+
+      .st {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        flex: none
+      }
+
+      .st.online {
+        background: #1FA35C
+      }
+
+      .st.ocupado {
+        background: #E09B13
+      }
+
+      .st.dnd {
+        background: #D4483A
+      }
+
+      .st.offline {
+        background: #B9C4CC
+      }
+
+      .tag {
+        font-size: 10.5px;
+        padding: 3px 8px;
+        border-radius: 5px;
+        background: #EEF2F5;
+        color: var(--muted);
+        font-weight: 600;
+        white-space: nowrap;
+        letter-spacing: .3px
+      }
+
+      .tag.on {
+        background: var(--call-soft);
+        color: var(--call)
+      }
+
+      .tag.oc {
+        background: var(--warn-soft);
+        color: var(--warn)
+      }
+
+      .tag.dd {
+        background: var(--danger-soft);
+        color: var(--danger)
+      }
+
+      .mini {
+        width: auto;
+        margin: 0;
+        padding: 7px 12px;
+        border-radius: 7px;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        border: 1px solid transparent;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        justify-content: center
+      }
+
+      .fav {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 2px;
+        color: #C4CDD4;
+        display: flex
+      }
+
+      .fav.on {
+        color: #E0A500
+      }
+
+      .fav .i {
+        width: 17px;
+        height: 17px
+      }
+
+      .hide {
+        display: none !important
+      }
+
+      .err {
+        color: var(--danger);
+        font-size: 13px;
+        margin-top: 10px;
+        text-align: center;
+        min-height: 16px
+      }
+
+      .setorH {
+        font-size: 11px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin: 16px 0 4px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600
+      }
+
+      .setorH:first-child {
+        margin-top: 0
+      }
+
+      .hist .item .nome {
+        font-size: 12.5px;
+        color: var(--muted)
+      }
+
+      .hist .item .hic {
+        color: var(--muted);
+        display: flex
+      }
+
+      .hist .item .hic.miss {
+        color: var(--danger)
+      }
+
+      .hist .item .hic .i {
+        width: 16px;
+        height: 16px
+      }
+
+      /* chat */
+      #chatMsgs {
+        max-height: 340px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 10px 0
+      }
+
+      .msg {
+        max-width: 78%;
+        padding: 9px 12px;
+        border-radius: 10px;
+        font-size: 14px;
+        line-height: 1.45;
+        word-break: break-word
+      }
+
+      .msg.eu {
+        background: var(--brand);
+        color: #fff;
+        align-self: flex-end;
+        border-bottom-right-radius: 3px
+      }
+
+      .msg.ele {
+        background: #EEF2F5;
+        align-self: flex-start;
+        border-bottom-left-radius: 3px
+      }
+
+      .msg .h {
+        font-size: 10px;
+        opacity: .65;
+        margin-top: 4px;
+        text-align: right
+      }
+
+      /* overlay de chamada */
+      .ov {
+        position: fixed;
+        inset: 0;
+        background: rgba(16, 32, 30, .55);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 50;
+        padding: 16px;
+        overflow-y: auto
+      }
+
+      .ov.show {
+        display: flex
+      }
+
+      .sheet {
+        background: #fff;
+        border-radius: 14px;
+        padding: 28px 22px 24px;
+        width: 100%;
+        max-width: 420px;
+        text-align: center;
+        box-shadow: 0 18px 50px rgba(10, 25, 22, .28)
+      }
+
+      .avatar {
+        width: 76px;
+        height: 76px;
+        border-radius: 50%;
+        background: var(--brand-soft);
+        color: var(--brand);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 14px
+      }
+
+      .avatar .i {
+        width: 30px;
+        height: 30px
+      }
+
+      .avatar.ring {
+        animation: rg 1.1s infinite
+      }
+
+      @keyframes rg {
+
+        0%,
+        100% {
+          transform: rotate(0)
+        }
+
+        25% {
+          transform: rotate(-8deg)
+        }
+
+        50% {
+          transform: rotate(8deg)
+        }
+
+        75% {
+          transform: rotate(-4deg)
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .avatar.ring {
+          animation: none
+        }
+      }
+
+      .ov .t1 {
+        font-size: 11.5px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 1.6px;
+        font-weight: 600
+      }
+
+      .ov .t2 {
+        font-size: 42px;
+        font-weight: 600;
+        margin: 8px 0 2px;
+        font-family: var(--mono);
+        color: var(--ink)
+      }
+
+      .ov .t3 {
+        font-size: 15px;
+        color: var(--muted);
+        margin-bottom: 14px
+      }
+
+      #parts {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-bottom: 12px
+      }
+
+      #parts .p {
+        background: var(--brand-soft);
+        color: var(--brand);
+        border-radius: 6px;
+        padding: 5px 11px;
+        font-size: 12.5px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-family: var(--mono)
+      }
+
+      #parts .p.hold {
+        background: #EEF2F5;
+        color: var(--hold)
+      }
+
+      #parts .p .i {
+        width: 13px;
+        height: 13px
+      }
+
+      #timer {
+        font-size: 16px;
+        color: var(--call);
+        margin-bottom: 16px;
+        font-family: var(--mono);
+        font-weight: 600
+      }
+
+      #relayAviso {
+        background: var(--warn-soft);
+        color: var(--warn);
+        border: 1px solid #EAD9B8;
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 12.5px;
+        margin: -6px 0 14px;
+        font-weight: 500
+      }
+
+      .ov .acoes {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: center
+      }
+
+      .ov .acoes button {
+        flex: 1;
+        min-width: 110px;
+        padding: 11px 8px;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        font: inherit;
+        color: #fff;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px
+      }
+
+      .ov .acoes .bgr {
+        color: var(--ink)
+      }
+
+      #painelExtra {
+        margin-top: 14px
+      }
+
+      #toast {
+        position: fixed;
+        bottom: 18px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--ink);
+        color: #fff;
+        padding: 11px 18px;
+        border-radius: 8px;
+        font-size: 13.5px;
+        display: none;
+        z-index: 80;
+        max-width: 92%;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, .25)
+      }
+
+      #banner {
+        position: fixed;
+        top: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #fff;
+        border: 1px solid var(--line);
+        border-left: 4px solid var(--call);
+        border-radius: 10px;
+        padding: 14px;
+        z-index: 70;
+        display: none;
+        width: 92%;
+        max-width: 440px;
+        box-shadow: 0 10px 30px rgba(10, 25, 22, .18);
+        font-size: 14px
+      }
+
+      #banner .row {
+        margin-top: 10px
+      }
+
+      #gravBox {
+        margin-top: 14px
+      }
+
+      audio.rec {
+        width: 100%;
+        margin-top: 8px
+      }
+
+      /* salas de estudo */
+      .salaCard {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 14px;
+        margin-bottom: 10px;
+        background: #FBFCFD
+      }
+
+      .salaCard .tit {
+        font-weight: 600;
+        font-size: 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px
+      }
+
+      .salaCard .mat {
+        color: var(--muted);
+        font-size: 13px;
+        margin: 4px 0 10px
+      }
+
+      .membroRow {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 4px;
+        border-bottom: 1px solid var(--line);
+        font-size: 14px
+      }
+
+      .membroRow:last-child {
+        border-bottom: none
+      }
+
+      .membroRow .mud {
+        color: var(--danger);
+        font-size: 11px;
+        font-weight: 600
+      }
+
+      #gradeVideos {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 8px;
+        margin: 12px 0
+      }
+
+      #gradeVideos .tile {
+        position: relative;
+        background: #0B1513;
+        border-radius: 10px;
+        overflow: hidden;
+        aspect-ratio: 16/10
+      }
+
+      #gradeVideos video {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block
+      }
+
+      #gradeVideos .rot {
+        position: absolute;
+        left: 6px;
+        bottom: 6px;
+        background: rgba(0, 0, 0, .55);
+        color: #fff;
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 5px;
+        font-family: var(--mono)
+      }
+
+      #salaControles {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 12px 0
+      }
+
+      #salaControles .mini {
+        flex: 1;
+        min-width: 100px
+      }
+
+      #salaControles .ativo {
+        background: var(--call);
+        color: #fff;
+        border-color: var(--call) !important
+      }
+
+      .topico {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 9px 4px;
+        border-bottom: 1px solid var(--line);
+        font-size: 14px
+      }
+
+      .topico:last-child {
+        border-bottom: none
+      }
+
+      .topico .quem {
+        color: var(--muted);
+        font-size: 11px;
+        font-family: var(--mono)
+      }
+
+      .topico .txt {
+        flex: 1;
+        line-height: 1.45
+      }
+
+      /* vídeo */
+      #videoArea {
+        position: relative;
+        margin: -28px -22px 16px;
+        border-radius: 14px 14px 0 0;
+        overflow: hidden;
+        background: #0B1513;
+        aspect-ratio: 4/3
+      }
+
+      #vRemote {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block
+      }
+
+      #vLocal {
+        position: absolute;
+        right: 10px;
+        bottom: 10px;
+        width: 94px;
+        aspect-ratio: 3/4;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 2px solid rgba(255, 255, 255, .85);
+        background: #000
+      }
+
+      /* áudio no chat */
+      .msg audio {
+        width: 230px;
+        max-width: 100%;
+        height: 38px;
+        display: block
+      }
+
+      #btnChatMic.recording {
+        background: var(--danger);
+        color: #fff;
+        border-color: var(--danger) !important
+      }
+
+      .msg img {
+        max-width: 230px;
+        width: 100%;
+        border-radius: 8px;
+        display: block;
+        cursor: pointer
+      }
+
+      #imgViewer {
+        position: fixed;
+        inset: 0;
+        background: rgba(10, 18, 16, .92);
+        z-index: 90;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        cursor: zoom-out
+      }
+
+      #imgViewer.show {
+        display: flex
+      }
+
+      #imgViewer img {
+        max-width: 100%;
+        max-height: 100%;
+        border-radius: 10px
+      }
+    </style>
+    <script type="text/javascript" src="./index.js" defer=""></script>
+    <link rel="stylesheet" href="./index.css">
+  </head>
+
+  <body>
+    <header class="topbar">
+      <div class="in">
+        <span class="logo"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.4 2.1L8.1 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.6 2z"></path></svg></span>
+        <div><b>Central de Ramais</b><small>Sistema interno de telefonia</small></div>
+        <span class="conn"><span class="dot" id="dot"></span><span id="connTxt">off-line</span></span>
+        <span id="hUser" class="hide"></span>
+      </div>
+    </header>
+    <nav class="tabsbar">
+      <div class="tabs">
+        <button id="tbPainel" class="on" onclick="aba('painel')"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
+            <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
+            <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
+            <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
+          </svg>Painel</button>
+        <button id="tbConta" onclick="aba('conta')"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="8" r="4"></circle>
+            <path d="M4 21a8 8 0 0 1 16 0"></path>
+          </svg>Conta</button>
+        <button id="tbTelefone" class="hide" onclick="aba('telefone')"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.4 2.1L8.1 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.6 2z"></path>
+          </svg>Telefone<span id="bdPerdidas" class="badge hide"></span></button>
+        <button id="tbChat" class="hide" onclick="aba('chat')"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 12a8 8 0 0 1-8 8H4l2-3a8 8 0 1 1 15-5z"></path>
+          </svg>Mensagens<span id="bdChat" class="badge hide"></span></button>
+        <button id="tbEstudos" class="hide" onclick="aba('estudos')"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+          </svg>Estudos</button>
+      </div>
+    </nav>
+    <div class="wrap">
+
+      <!-- PAINEL PÚBLICO -->
+      <div id="abaPainel">
+        <div class="card">
+          <label>Status dos ramais</label>
+          <div id="painelLista">
+            <div class="sub">Carregando…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTA -->
+      <div id="abaConta" class="hide">
+        <div class="card" id="cardLogin">
+          <label class="sect">Acessar minha conta</label>
+          <label>Usuário</label>
+          <input id="lUser" placeholder="seu.usuario" autocomplete="username">
+          <label>Senha</label>
+          <input id="lPass" type="password" placeholder="Sua senha" autocomplete="current-password">
+          <button class="b bp" onclick="login()">Entrar</button>
+          <button class="b bgr" onclick="mostrarCadastro()">Criar nova conta</button>
+          <div class="err" id="lErr"></div>
+        </div>
+
+        <div class="card hide" id="cardCadastro">
+          <label class="sect">Criar conta</label>
+          <label>Nome</label>
+          <input id="cNome" placeholder="Ex: João, Caixa 1">
+          <label>Setor (opcional — usado nas chamadas em grupo)</label>
+          <input id="cSetor" placeholder="Ex: Cozinha, Vendas">
+          <label>Usuário</label>
+          <input id="cUser" placeholder="Somente letras e números">
+          <label>Senha</label>
+          <input id="cPass" type="password" placeholder="Mínimo 4 caracteres">
+          <label>Número do ramal</label>
+          <input id="cRamal" type="number" placeholder="Ex: 101">
+          <button class="b bg" onclick="cadastrar()">Cadastrar</button>
+          <button class="b bgr" onclick="mostrarLogin()">Já tenho conta</button>
+          <div class="err" id="cErr"></div>
+        </div>
+
+        <div class="card hide" id="cardPerfil">
+          <label class="sect">Meu ramal</label>
+          <div class="big" id="pRamal">--</div>
+          <div class="sub" id="pNome" style="margin-top:4px"></div>
+          <label>Nome</label>
+          <input id="pNovoNome">
+          <label>Setor</label>
+          <input id="pNovoSetor">
+          <label>Número do ramal</label>
+          <input id="pNovoRamal" type="number">
+          <label>Desvio: se eu não atender em 20s, tocar no ramal (vazio = correio de voz)</label>
+          <input id="pDesvio" type="number" placeholder="Ex: 105">
+          <button class="b bp" onclick="salvarPerfil()">Salvar alterações</button>
+          <button class="b bgr" onclick="logout()">Sair da conta</button>
+          <div class="err" id="pErr"></div>
+        </div>
+      </div>
+
+      <!-- TELEFONE -->
+      <div id="abaTelefone" class="hide">
+        <div class="card">
+          <label class="sect">Discar</label>
+          <div class="row">
+            <input id="inpDestino" type="number" placeholder="Número do ramal">
+            <button class="mini bg" style="flex:0 0 96px" onclick="ligarPara(document.getElementById('inpDestino').value)"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.4 2.1L8.1 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.6 2z"></path>
+              </svg>Ligar</button>
+            <button class="mini bgr" style="flex:0 0 44px" title="Chamada de vídeo" onclick="ligarPara(document.getElementById('inpDestino').value,{video:true})"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m22 8-6 4 6 4V8z"></path>
+                <rect x="2" y="6" width="14" height="12" rx="2"></rect>
+              </svg></button>
+            <button class="mini bgr" style="flex:0 0 44px" title="Rediscar última chamada" onclick="rediscar()"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 7v6h-6"></path>
+                <path d="M3 17a9 9 0 0 1 15-6.7L21 13"></path>
+              </svg></button>
+          </div>
+          <div class="row" style="margin-top:8px">
+            <button class="mini bgr" id="btnDnd" style="flex:1" onclick="toggleDnd()"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m2 2 20 20"></path>
+                <path d="M18.6 13.4A2 2 0 0 1 18 12V8a6 6 0 0 0-9.3-5"></path>
+                <path d="M6.3 6.3A6 6 0 0 0 6 8v4a2 2 0 0 1-1.4 1.9L4 17h11"></path>
+                <path d="M10 21h4"></path>
+              </svg><span id="dndTxt">Não perturbe: desativado</span></button>
+            <button class="mini bo" style="flex:1" onclick="avisoGeral()" id="btnAviso"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="2"></circle>
+                <path d="M16.2 7.8a6 6 0 0 1 0 8.4"></path>
+                <path d="M7.8 16.2a6 6 0 0 1 0-8.4"></path>
+                <path d="M19.1 4.9a10 10 0 0 1 0 14.2"></path>
+                <path d="M4.9 19.1a10 10 0 0 1 0-14.2"></path>
+              </svg>Aviso geral</button>
+          </div>
+          <div class="row" style="margin-top:8px">
+            <input id="inpSetor" placeholder="Nome do setor">
+            <button class="mini bp" style="flex:0 0 140px" onclick="ligarSetor(document.getElementById('inpSetor').value)"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.9"></path>
+                <path d="M16 3.1a4 4 0 0 1 0 7.8"></path>
+              </svg>Chamar setor</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <label class="sect">Lista de ramais <button class="mini bgr" style="margin-left:auto;padding:4px 9px" title="Atualizar" onclick="renderTelefone()"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 12a9 9 0 1 1-2.6-6.4"></path>
+                <path d="M21 4v5h-5"></path>
+              </svg></button></label>
+          <div id="listaTel"></div>
+        </div>
+
+        <div class="card">
+          <label class="sect"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"></circle>
+              <path d="M12 7v5l3 3"></path>
+            </svg>Histórico de chamadas <button class="mini bgr" style="margin-left:auto;padding:4px 10px;font-size:12px" onclick="limparHist()">Limpar</button></label>
+          <div id="listaHist" class="hist">
+            <div class="sub">Nenhuma chamada registrada.</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <label class="sect"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="6" cy="12" r="3.5"></circle>
+              <circle cx="18" cy="12" r="3.5"></circle>
+              <path d="M6 15.5h12"></path>
+            </svg>Correio de voz</label>
+          <div id="listaRecados">
+            <div class="sub">Nenhum recado.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ESTUDOS -->
+      <div id="abaEstudos" class="hide">
+        <div id="vSalasLista">
+          <div class="card">
+            <label class="sect">Criar sala de estudos</label>
+            <div class="row">
+              <input id="nsNome" placeholder="Nome da sala">
+              <input id="nsMateria" placeholder="Matéria (ex: Matemática)">
+            </div>
+            <button class="b bp" onclick="criarSala()">Criar sala</button>
+          </div>
+          <div class="card">
+            <label class="sect">Salas disponíveis</label>
+            <div id="listaSalas">
+              <div class="sub">Nenhuma sala criada ainda.</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="vSalaDentro" class="hide">
+          <div class="card">
+            <label class="sect" id="salaTitulo">Sala</label>
+            <div class="sub" id="salaMateria" style="text-align:left;margin-bottom:8px"></div>
+            <div id="gradeVideos"></div>
+            <div id="salaControles">
+              <button class="mini bgr" id="btnSalaMudo" onclick="salaToggleMudo()"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect x="9" y="2" width="6" height="12" rx="3"></rect>
+                  <path d="M5 10a7 7 0 0 0 14 0"></path>
+                  <path d="M12 17v4"></path>
+                </svg><span id="salaMudoTxt">Mudo</span></button>
+              <button class="mini bgr" id="btnSalaCam" onclick="salaToggleCamera()"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="m22 8-6 4 6 4V8z"></path>
+                  <rect x="2" y="6" width="14" height="12" rx="2"></rect>
+                </svg>Câmera</button>
+              <button class="mini bgr" id="btnSalaTela" onclick="salaToggleTela()"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+                  <path d="M8 21h8"></path>
+                  <path d="M12 17v4"></path>
+                </svg>Espelhar tela</button>
+              <button class="mini br" onclick="sairSala()">Sair da sala</button>
+            </div>
+            <label class="sect" style="margin-top:6px">Participantes</label>
+            <div id="salaMembros"></div>
+          </div>
+          <div class="card">
+            <label class="sect">Conversa da sala</label>
+            <div id="salaChatMsgs" style="max-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding:6px 0"></div>
+            <div class="row" style="margin-top:8px">
+              <input id="salaChatTxt" placeholder="Escreva algo para a sala…" onkeydown="if(event.key==='Enter')salaEnviarMsg()">
+              <button class="mini bp" style="flex:0 0 84px" onclick="salaEnviarMsg()">Enviar</button>
+            </div>
+          </div>
+          <div class="card">
+            <label class="sect">Assuntos da matéria</label>
+            <div id="salaTopicos">
+              <div class="sub">Nenhum assunto anotado.</div>
+            </div>
+            <div class="row" style="margin-top:10px">
+              <input id="inpTopico" placeholder="Anotar assunto, dúvida ou tarefa…" onkeydown="if(event.key==='Enter')addTopico()">
+              <button class="mini bp" style="flex:0 0 90px" onclick="addTopico()">Anotar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHAT -->
+      <div id="abaChat" class="hide">
+        <div class="card">
+          <label class="sect">Mensagens</label>
+          <label>Conversar com o ramal</label>
+          <select id="chatDest" onchange="abrirChat()"></select>
+          <div id="chatMsgs"></div>
+          <div class="row" style="margin-top:8px">
+            <input id="chatTxt" placeholder="Escreva uma mensagem…" onkeydown="if(event.key==='Enter')enviarMsg()">
+            <button class="mini bgr" style="flex:0 0 44px" id="btnChatImg" title="Enviar foto" onclick="document.getElementById('inpChatImg').click()"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m21.4 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+              </svg></button>
+            <button class="mini bgr" style="flex:0 0 44px" id="btnChatMic" title="Gravar mensagem de voz" onclick="gravarAudioChat()"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="9" y="2" width="6" height="12" rx="3"></rect>
+                <path d="M5 10a7 7 0 0 0 14 0"></path>
+                <path d="M12 17v4"></path>
+              </svg></button>
+            <button class="mini bp" style="flex:0 0 84px" onclick="enviarMsg()">Enviar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BANNER 2ª CHAMADA -->
+    <div id="banner">
+      <b>Segunda chamada</b> — ramal <b id="bnRamal" style="font-family:var(--mono)"></b> <span id="bnNome" class="sub"></span>
+      <div class="row">
+        <button class="mini bg" onclick="atenderEspera()">Atender e pausar a atual</button>
+        <button class="mini br" onclick="recusarEspera()">Recusar</button>
+      </div>
+    </div>
+
+    <!-- OVERLAY CHAMADA -->
+    <div class="ov" id="ov">
+      <div class="sheet">
+        <div id="videoArea" class="hide">
+          <video id="vRemote" autoplay="" playsinline="" muted=""></video>
+          <video id="vLocal" autoplay="" playsinline="" muted=""></video>
+        </div>
+        <div class="avatar ring" id="avatar"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.4 2.1L8.1 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.6 2z"></path>
+          </svg></div>
+        <div class="t1" id="ovT1">Chamada recebida</div>
+        <div class="t2" id="ovT2">---</div>
+        <div class="t3" id="ovT3"></div>
+        <div id="parts"></div>
+        <div id="timer" class="hide">00:00</div>
+        <div id="relayAviso" class="hide">Conexão via servidor intermediário<span id="relayVid" class="hide"> — o vídeo está consumindo sua cota mensal</span></div>
+
+        <div class="acoes" id="acRecebendo">
+          <button class="bg" onclick="atender()"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.4 2.1L8.1 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.6 2z"></path>
+            </svg>Atender</button>
+          <button class="br" onclick="recusar()">Recusar</button>
+        </div>
+
+        <div class="acoes hide" id="acEmChamada">
+          <button class="bgr" id="btnMute" onclick="toggleMute()"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="9" y="2" width="6" height="12" rx="3"></rect>
+              <path d="M5 10a7 7 0 0 0 14 0"></path>
+              <path d="M12 17v4"></path>
+            </svg><span id="muteTxt">Mudo</span></button>
+          <button class="bgr" id="btnHold" onclick="toggleHoldTudo()"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="6" y="4" width="4" height="16" rx="1"></rect>
+              <rect x="14" y="4" width="4" height="16" rx="1"></rect>
+            </svg><span id="holdTxt">Espera</span></button>
+          <button class="bgr" onclick="togglePainel('add')"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 5v14"></path>
+              <path d="M5 12h14"></path>
+            </svg>Adicionar</button>
+          <button class="bgr" onclick="togglePainel('transf')"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M4 17V7l7 5z"></path>
+              <path d="M13 12h7"></path>
+              <path d="m17 8 4 4-4 4"></path>
+            </svg>Transferir</button>
+          <button class="bgr" onclick="togglePainel('consulta')"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M22 21v-2a4 4 0 0 0-3-3.9"></path>
+              <path d="M16 3.1a4 4 0 0 1 0 7.8"></path>
+            </svg>Transferir com consulta</button>
+          <button class="bgr hide" id="btnCam" onclick="toggleCamera()"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m22 8-6 4 6 4V8z"></path>
+              <rect x="2" y="6" width="14" height="12" rx="2"></rect>
+            </svg><span id="camTxt">Desligar câmera</span></button>
+          <button class="bgr hide" id="btnCompletar" onclick="completarConsulta()"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20 6 9 17l-5-5"></path>
+            </svg>Concluir transferência</button>
+          <button class="bgr hide" id="btnAlternar" onclick="alternarChamadas()"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M16 3h5v5"></path>
+              <path d="M8 21H3v-5"></path>
+              <path d="M21 3 3 21"></path>
+            </svg>Alternar</button>
+          <button class="br" onclick="encerrarTudo()">Encerrar</button>
+        </div>
+
+        <div id="painelExtra" class="hide">
+          <div class="row">
+            <input id="inpExtra" type="number" placeholder="Número do ramal">
+            <button class="mini bg" style="flex:0 0 110px" id="btnExtra" onclick="confirmarExtra()">Confirmar</button>
+          </div>
+        </div>
+
+        <div id="gravBox" class="hide">
+          <div class="sub" id="gravInfo">O ramal não atendeu. Deixe um recado (máx. 30s):</div>
+          <div class="row" style="margin-top:10px">
+            <button class="mini br" id="btnGravar" onclick="gravarRecado()"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="6" fill="currentColor" stroke="none"></circle>
+              </svg><span id="gravTxt">Gravar recado</span></button>
+            <button class="mini bgr" onclick="cancelarRecado()">Cancelar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <input type="file" id="inpChatImg" accept="image/*" class="hide" onchange="enviarImagemChat(this)">
+    <div id="imgViewer" onclick="this.classList.remove('show')"><img id="imgViewerImg" alt=""></div>
+    <!-- PONTE (chamadas entre navegador e o app Flutter) -->
+    <div class="ov" id="ovPonte">
+      <div class="sheet">
+        <div class="avatar ring" id="pontAvatar"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="6" y="2" width="12" height="20" rx="2"></rect>
+            <path d="M11 18h2"></path>
+          </svg></div>
+        <div class="t1">Chamada via app (Flutter)</div>
+        <div class="t2" id="pontT2">---</div>
+        <div class="t3" id="pontT3">Conectando…</div>
+        <div id="pontTimer" class="hide" style="font-size:16px;color:var(--call);margin-bottom:16px;font-family:var(--mono);font-weight:600">00:00</div>
+        <div class="acoes">
+          <button class="bgr" id="pontBtnMute" onclick="pontMudo()"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="2" width="6" height="12" rx="3"></rect>
+              <path d="M5 10a7 7 0 0 0 14 0"></path>
+              <path d="M12 17v4"></path>
+            </svg>Mudo</button>
+          <button class="br" onclick="pontEncerrar()">Encerrar</button>
+        </div>
+      </div>
+    </div>
+    <audio id="pontRemoteAudio" autoplay=""></audio>
+
+    <div id="toast"></div>
+
+    <script>
+      /* ============ FIREBASE ============ */
+      const firebaseConfig = {
+        apiKey: "AIzaSyDJBdK9I-jtg9ujTc9Xsxr-hnPfkId4wIU",
+        authDomain: "pdv1-77632.firebaseapp.com",
+        databaseURL: "https://pdv1-77632-default-rtdb.firebaseio.com",
+        projectId: "pdv1-77632",
+        storageBucket: "pdv1-77632.firebasestorage.app",
+        messagingSenderId: "246033791117",
+        appId: "1:246033791117:web:7b70b511ea8d8c5ba1cac4"
+      };
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.database();
+
+      /* ============ PWA (manifest dinâmico) ============ */
+      try {
+        const man = {
+          name: "Central de Ramais",
+          short_name: "Ramais",
+          start_url: location.href,
+          display: "standalone",
+          background_color: "#12403D",
+          theme_color: "#12403D",
+          icons: [{
+            src: "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192"><rect width="192" height="192" rx="40" fill="%2312403D"/><path d="M142 116v14a10 10 0 0 1-11 10 95 95 0 0 1-41-15 93 93 0 0 1-29-29 95 95 0 0 1-15-41 10 10 0 0 1 10-11h14a10 10 0 0 1 10 8.5c.6 4.6 1.8 9.2 3.4 13.6a10 10 0 0 1-2.3 10.4l-6 6a77 77 0 0 0 29 29l6-6a10 10 0 0 1 10.4-2.3c4.4 1.6 9 2.8 13.6 3.4a10 10 0 0 1 8.4 9.9z" fill="white"/></svg>'),
+            sizes: "192x192",
+            type: "image/svg+xml"
+          }]
+        };
+        const l = document.createElement('link');
+        l.rel = 'manifest';
+        l.href = URL.createObjectURL(new Blob([JSON.stringify(man)], {
+          type: 'application/json'
+        }));
+        document.head.appendChild(l);
+      } catch (e) {}
+
+      const ICP = {
+        "phone": "<path d=\"M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.4 2.1L8.1 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.6 2z\"/>",
+        "in": "<path d=\"M17 7 7 17\"/><path d=\"M15 17H7V9\"/>",
+        "out": "<path d=\"m7 17 10-10\"/><path d=\"M9 7h8v8\"/>",
+        "miss": "<path d=\"m2 2 20 20\"/><path d=\"M8.7 3.9A17 17 0 0 1 12 3.6c4 0 7.7 1.4 10 3.6l-3.2 3.2a2 2 0 0 1-2.5.3\"/><path d=\"M2 7.2a12 12 0 0 1 3.3-2.3\"/><path d=\"M2 7.2 5 10.3a2 2 0 0 0 2.5.3l.7-.4\"/>",
+        "x": "<path d=\"M18 6 6 18\"/><path d=\"m6 6 12 12\"/>",
+        "mic": "<rect x=\"9\" y=\"2\" width=\"6\" height=\"12\" rx=\"3\"/><path d=\"M5 10a7 7 0 0 0 14 0\"/><path d=\"M12 17v4\"/>",
+        "pause": "<rect x=\"6\" y=\"4\" width=\"4\" height=\"16\" rx=\"1\"/><rect x=\"14\" y=\"4\" width=\"4\" height=\"16\" rx=\"1\"/>",
+        "plus": "<path d=\"M12 5v14\"/><path d=\"M5 12h14\"/>",
+        "transfer": "<path d=\"M4 17V7l7 5z\"/><path d=\"M13 12h7\"/><path d=\"m17 8 4 4-4 4\"/>",
+        "swap": "<path d=\"M16 3h5v5\"/><path d=\"M8 21H3v-5\"/><path d=\"M21 3 3 21\"/>",
+        "users": "<path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M22 21v-2a4 4 0 0 0-3-3.9\"/><path d=\"M16 3.1a4 4 0 0 1 0 7.8\"/>",
+        "radio": "<circle cx=\"12\" cy=\"12\" r=\"2\"/><path d=\"M16.2 7.8a6 6 0 0 1 0 8.4\"/><path d=\"M7.8 16.2a6 6 0 0 1 0-8.4\"/><path d=\"M19.1 4.9a10 10 0 0 1 0 14.2\"/><path d=\"M4.9 19.1a10 10 0 0 1 0-14.2\"/>",
+        "star": "<path fill=\"currentColor\" stroke=\"none\" d=\"m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z\"/>",
+        "staro": "<path d=\"m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z\"/>",
+        "app": "<rect x=\"6\" y=\"2\" width=\"12\" height=\"20\" rx=\"2\"/><path d=\"M11 18h2\"/>",
+        "trash": "<path d=\"M3 6h18\"/><path d=\"M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2\"/><path d=\"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6\"/><path d=\"M10 11v6\"/><path d=\"M14 11v6\"/>",
+        "vm": "<circle cx=\"6\" cy=\"12\" r=\"3.5\"/><circle cx=\"18\" cy=\"12\" r=\"3.5\"/><path d=\"M6 15.5h12\"/>",
+        "refresh": "<path d=\"M21 12a9 9 0 1 1-2.6-6.4\"/><path d=\"M21 4v5h-5\"/>",
+        "check": "<path d=\"M20 6 9 17l-5-5\"/>",
+        "rec": "<circle cx=\"12\" cy=\"12\" r=\"6\" fill=\"currentColor\" stroke=\"none\"/>",
+        "grid": "<rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1.5\"/>",
+        "user": "<circle cx=\"12\" cy=\"8\" r=\"4\"/><path d=\"M4 21a8 8 0 0 1 16 0\"/>",
+        "chat": "<path d=\"M21 12a8 8 0 0 1-8 8H4l2-3a8 8 0 1 1 15-5z\"/>",
+        "belloff": "<path d=\"m2 2 20 20\"/><path d=\"M18.6 13.4A2 2 0 0 1 18 12V8a6 6 0 0 0-9.3-5\"/><path d=\"M6.3 6.3A6 6 0 0 0 6 8v4a2 2 0 0 1-1.4 1.9L4 17h11\"/><path d=\"M10 21h4\"/>",
+        "history": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v5l3 3\"/>",
+        "video": "<path d=\"m22 8-6 4 6 4V8z\"/><rect x=\"2\" y=\"6\" width=\"14\" height=\"12\" rx=\"2\"/>",
+        "redo": "<path d=\"M21 7v6h-6\"/><path d=\"M3 17a9 9 0 0 1 15-6.7L21 13\"/>",
+        "micoff": "<path d=\"m2 2 20 20\"/><path d=\"M9 9v3a3 3 0 0 0 5.1 2.1\"/><path d=\"M15 9.3V5a3 3 0 0 0-5.9-.8\"/><path d=\"M17 12.5a7 7 0 0 1-12-2.5\"/><path d=\"M12 17v4\"/>",
+        "play": "<path d=\"M7 4.5v15l12-7.5z\"/>",
+        "stop": "<rect x=\"6\" y=\"6\" width=\"12\" height=\"12\" rx=\"1.5\" fill=\"currentColor\" stroke=\"none\"/>"
+      };
+
+      function ic(n) {
+        return '<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICP[n] + '</svg>';
+      }
+      /* ============ ESTADO ============ */
+      const PREFIX = "pdv1-ramal-";
+      /* ===== SERVIDORES DE CONEXÃO (ICE) =====
+         Preencha TURN_API com a URL da sua API no Vercel, ex:
+         const TURN_API="https://seu-projeto.vercel.app/api/turn";
+         Com a API no ar, as credenciais saem do HTML. Se a API falhar,
+         o sistema usa o fallback abaixo (troque/apague as credenciais dele
+         depois que a API estiver funcionando). */
+      const TURN_API = "";
+      let ICE = {
+        iceServers: [{
+            urls: "stun:stun.relay.metered.ca:80"
+          },
+          {
+            urls: "turn:standard.relay.metered.ca:80",
+            username: "bf90901f63129b9e5221dfdc",
+            credential: "G6EJ/OtfTt+EBrND"
+          },
+          {
+            urls: "turn:standard.relay.metered.ca:443",
+            username: "bf90901f63129b9e5221dfdc",
+            credential: "G6EJ/OtfTt+EBrND"
+          },
+          {
+            urls: "turns:standard.relay.metered.ca:443?transport=tcp",
+            username: "bf90901f63129b9e5221dfdc",
+            credential: "G6EJ/OtfTt+EBrND"
+          }
+        ]
+      };
+
+      /* ============================================================
+         PONTE — chamadas entre o navegador e o app Flutter
+         ------------------------------------------------------------
+         O app Flutter NÃO usa o servidor do PeerJS: ele troca "oferta/
+         resposta/candidatos" (sinalização WebRTC) direto pelo Firebase,
+         no nó /sinalizacao/{destino}/{origem}. Este bloco faz o navegador
+         também falar esse mesmo protocolo — em paralelo ao sistema normal
+         de ramais (PeerJS), sem mexer em nada dele. É por isso que existe
+         um botão extra "📱" ao lado do "Ligar" na lista de ramais.
+         ============================================================ */
+      let pontPC = null,
+        pontMicStream = null,
+        pontOutro = null,
+        pontTimerInt = null,
+        pontSeg = 0;
+
+      function pontMostrarOverlay(destino, titulo) {
+        document.getElementById('pontT2').innerText = destino;
+        document.getElementById('pontT3').innerText = titulo;
+        document.getElementById('pontAvatar').classList.add('ring');
+        document.getElementById('pontTimer').classList.add('hide');
+        document.getElementById('ovPonte').classList.add('show');
+      }
+
+      function pontConectadoUI() {
+        document.getElementById('pontT3').innerText = 'Em chamada';
+        document.getElementById('pontAvatar').classList.remove('ring');
+        document.getElementById('pontTimer').classList.remove('hide');
+        pontSeg = 0;
+        clearInterval(pontTimerInt);
+        pontTimerInt = setInterval(() => {
+          pontSeg++;
+          document.getElementById('pontTimer').innerText = fmtDur(pontSeg);
+        }, 1000);
+      }
+
+      function pontFecharOverlay() {
+        document.getElementById('ovPonte').classList.remove('show');
+        document.getElementById('pontBtnMute').classList.remove('ativo');
+        document.getElementById('pontTimer').innerText = '00:00';
+        clearInterval(pontTimerInt);
+        pontTimerInt = null;
+      }
+
+      async function pontPrepararConexao(aoReceberAudio) {
+        pontPC = new RTCPeerConnection(ICE);
+        pontMicStream = await navigator.mediaDevices.getUserMedia({
+          audio: true
+        });
+        pontMicStream.getTracks().forEach(t => pontPC.addTrack(t, pontMicStream));
+        pontPC.ontrack = (ev) => {
+          const audioEl = document.getElementById('pontRemoteAudio');
+          audioEl.srcObject = ev.streams[0];
+          audioEl.play().catch(() => {});
+          aoReceberAudio();
+        };
+      }
+
+      /* Ligar do navegador PARA um ramal que esteja no app Flutter */
+      async function pontLigar(destino) {
+        if (pontPC) return toast('Já existe uma chamada da ponte em andamento.');
+        destino = String(destino).trim();
+        try {
+          await pontPrepararConexao(pontConectadoUI);
+        } catch (e) {
+          return alert('Permita o acesso ao microfone!');
+        }
+
+        pontOutro = destino;
+        pontMostrarOverlay(destino, 'Chamando…');
+
+        const candidatosPendentes = [];
+        pontPC.onicecandidate = (ev) => {
+          if (ev.candidate) {
+            db.ref('sinalizacao/' + destino + '/' + usuario.ramal + '/candidatosOrigem').push({
+              candidate: ev.candidate.candidate,
+              sdpMid: ev.candidate.sdpMid,
+              sdpMLineIndex: ev.candidate.sdpMLineIndex
+            });
+          }
+        };
+
+        const oferta = await pontPC.createOffer();
+        await pontPC.setLocalDescription(oferta);
+
+        await db.ref('sinalizacao/' + destino + '/' + usuario.ramal).set({
+          oferta: {
+            sdp: oferta.sdp,
+            type: oferta.type
+          },
+          ts: Date.now()
+        });
+
+        db.ref('sinalizacao/' + destino + '/' + usuario.ramal).on('value', async (snap) => {
+          const dados = snap.val();
+          if (!dados || !pontPC) return;
+          if (dados.resposta && pontPC.signalingState !== 'stable') {
+            await pontPC.setRemoteDescription(new RTCSessionDescription(dados.resposta));
+          }
+          if (dados.candidatosDestino) {
+            Object.values(dados.candidatosDestino).forEach(async (c) => {
+              try {
+                await pontPC.addCandidate(new RTCIceCandidate(c));
+              } catch (e) {}
+            });
+          }
+        });
+      }
+
+      /* Escuta chamadas chegando do app Flutter (registrado após login) */
+      async function pontEscutarChamadas() {
+        if (!usuario) return;
+        const meuNo = db.ref('sinalizacao/' + usuario.ramal);
+        await meuNo.remove(); // limpa sinalização velha ANTES de escutar, para não perder uma chamada nova que chegue durante a limpeza
+        meuNo.on('child_added', async (snap) => {
+          if (pontPC) {
+            snap.ref.remove();
+            return;
+          } // já em outra chamada da ponte
+          const origem = snap.key;
+          const dados = snap.val();
+          if (!dados || !dados.oferta) return;
+
+          try {
+            await pontPrepararConexao(pontConectadoUI);
+          } catch (e) {
+            toast('Chamada do app recebida, mas o microfone foi negado.');
+            return;
+          }
+
+          pontOutro = origem;
+          pontMostrarOverlay(origem, 'Chamada do app…');
+          notificar && notificar('Chamada do app', 'Ramal ' + origem);
+
+          pontPC.onicecandidate = (ev) => {
+            if (ev.candidate) {
+              db.ref('sinalizacao/' + usuario.ramal + '/' + origem + '/candidatosDestino').push({
+                candidate: ev.candidate.candidate,
+                sdpMid: ev.candidate.sdpMid,
+                sdpMLineIndex: ev.candidate.sdpMLineIndex
+              });
+            }
+          };
+
+          await pontPC.setRemoteDescription(new RTCSessionDescription(dados.oferta));
+          if (dados.candidatosOrigem) {
+            Object.values(dados.candidatosOrigem).forEach(async (c) => {
+              try {
+                await pontPC.addCandidate(new RTCIceCandidate(c));
+              } catch (e) {}
+            });
+          }
+          // O app Flutter continua enviando candidatos ICE por mais alguns instantes
+          // DEPOIS do primeiro snapshot (processo chamado "trickle ICE") — sem este
+          // listener extra, esses candidatos chegavam tarde demais e eram ignorados,
+          // o que podia impedir a chamada de conectar mesmo "tocando".
+          snap.ref.child('candidatosOrigem').on('child_added', async (c) => {
+            if (!pontPC) return;
+            try {
+              await pontPC.addCandidate(new RTCIceCandidate(c.val()));
+            } catch (e) {}
+          });
+
+          const resposta = await pontPC.createAnswer();
+          await pontPC.setLocalDescription(resposta);
+          await snap.ref.child('resposta').set({
+            sdp: resposta.sdp,
+            type: resposta.type
+          });
+        });
+      }
+
+      function pontMudo() {
+        if (!pontMicStream) return;
+        const t = pontMicStream.getAudioTracks()[0];
+        t.enabled = !t.enabled;
+        document.getElementById('pontBtnMute').classList.toggle('ativo', !t.enabled);
+      }
+
+      function pontEncerrar() {
+        if (pontPC) {
+          try {
+            pontPC.close();
+          } catch (e) {}
+          pontPC = null;
+        }
+        if (pontMicStream) {
+          pontMicStream.getTracks().forEach(t => t.stop());
+          pontMicStream = null;
+        }
+        if (usuario && pontOutro) {
+          db.ref('sinalizacao/' + usuario.ramal + '/' + pontOutro).remove();
+          db.ref('sinalizacao/' + pontOutro + '/' + usuario.ramal).off();
+          db.ref('sinalizacao/' + pontOutro + '/' + usuario.ramal).remove();
+        }
+        pontOutro = null;
+        pontFecharOverlay();
+      }
+
+      let iceCarregado = false;
+      async function carregarICE() {
+        if (!TURN_API || iceCarregado) return;
+        try {
+          const r = await fetch(TURN_API, {
+            cache: "no-store"
+          });
+          const j = await r.json();
+          if (j && j.iceServers) {
+            ICE = j;
+            iceCarregado = true;
+          }
+        } catch (e) {
+          console.warn("API TURN indisponível, usando fallback.", e);
+        }
+      }
+      let usuario = null,
+        peer = null;
+      let ramaisCache = {},
+        usuariosCache = {};
+      let ctx = null,
+        micStream = null,
+        micSource = null;
+      let participantes = {}; // ativos: ramal -> {call,conn,dest,source,ghost}
+      let emEspera = {}; // grupo em hold
+      let chamadaEntrada = null,
+        esperaEntrada = null;
+      let timerInt = null,
+        seg = 0,
+        muted = false,
+        emChamada = false,
+        holdTudo = false;
+      let modoExtra = null,
+        consultando = null; // consultando = {alvo}
+      let ultimoDiscado = null,
+        chamandoPara = null,
+        timeoutChamada = null,
+        chamadaAtendida = false;
+      let grupoPendentes = null;
+      let autoAtenderDe = null,
+        autoAtenderTimer = null,
+        listenOnly = false;
+      let holdOsc = null,
+        holdGain = null;
+      let recDestino = null,
+        mediaRec = null,
+        recTimer = null,
+        ringSafety = null;
+      let camStream = null,
+        chatRec = null,
+        chatRecTimer = null;
+      let chatCom = null,
+        chatRef = null,
+        unread = {};
+      let inicioChamadaTs = 0;
+
+      /* ============ UTIL ============ */
+      async function hash(s) {
+        const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s + "::pdv1"));
+        return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
+      }
+
+      function toast(m) {
+        const t = document.getElementById('toast');
+        t.innerText = m;
+        t.style.display = 'block';
+        clearTimeout(t._t);
+        t._t = setTimeout(() => t.style.display = 'none', 3800);
+      }
+
+      function esc(s) {
+        return String(s ?? '').replace(/[<>&"]/g, c => ({
+          '<': '&lt;',
+          '>': '&gt;',
+          '&': '&amp;',
+          '"': '&quot;'
+        } [c]));
+      }
+
+      function fmtTs(ts) {
+        const d = new Date(ts);
+        return d.toLocaleDateString('pt-BR', {
+          day: '2-digit',
+          month: '2-digit'
+        }) + ' ' + d.toLocaleTimeString('pt-BR', {
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      }
+
+      function fmtDur(s) {
+        return String(Math.floor(s / 60)).padStart(2, '0') + ":" + String(s % 60).padStart(2, '0');
+      }
+
+      function logAud(acao) {
+        db.ref('logs').push({
+          ts: Date.now(),
+          quem: usuario ? usuario.login : '?',
+          ramal: usuario ? usuario.ramal : '?',
+          acao
+        });
+      }
+
+      function notificar(titulo, corpo) {
+        if (document.hasFocus()) return;
+        if (Notification && Notification.permission === 'granted') {
+          try {
+            new Notification(titulo, {
+              body: corpo,
+              tag: 'ramais'
+            });
+          } catch (e) {}
+        }
+      }
+
+      /* toque */
+      let actx = null,
+        ringInt = null;
+
+      function tocarRing() {
+        if (!actx) actx = new(window.AudioContext || window.webkitAudioContext)();
+        const beep = () => {
+          const o = actx.createOscillator(),
+            g = actx.createGain();
+          o.type = "sine";
+          o.frequency.value = 850;
+          g.gain.value = .25;
+          o.connect(g);
+          g.connect(amasterOut);
+          o.start();
+          o.frequency.setValueAtTime(650, actx.currentTime + .35);
+          o.stop(actx.currentTime + .7);
+        };
+        beep();
+        ringInt = setInterval(beep, 2000);
+        if (navigator.vibrate) navigator.vibrate([400, 200, 400]);
+      }
+
+      function pararRing() {
+        clearInterval(ringInt);
+        ringInt = null;
+        if (navigator.vibrate) navigator.vibrate(0);
+      }
+
+      /* ============ ABAS ============ */
+      function aba(a) {
+        ['painel', 'conta', 'telefone', 'chat', 'estudos', 'admin'].forEach(x => {
+          const d = document.getElementById('aba' + x[0].toUpperCase() + x.slice(1));
+          if (d) d.classList.toggle('hide', x !== a);
+          const tb = document.getElementById('tb' + x[0].toUpperCase() + x.slice(1));
+          if (tb) tb.classList.toggle('on', x === a);
+        });
+        if (a === 'chat') abrirChat();
+      }
+
+      function mostrarCadastro() {
+        document.getElementById('cardLogin').classList.add('hide');
+        document.getElementById('cardCadastro').classList.remove('hide');
+      }
+
+      function mostrarLogin() {
+        document.getElementById('cardCadastro').classList.add('hide');
+        document.getElementById('cardLogin').classList.remove('hide');
+      }
+
+      /* ============ LISTENERS GLOBAIS FIREBASE ============ */
+      db.ref('ramais').on('value', snap => {
+        ramaisCache = snap.val() || {};
+        renderPainel();
+        renderTelefone();
+        renderAdmin();
+        popularChatDest();
+      }, e => {
+        document.getElementById('painelLista').innerHTML = '<div class="err">Sem permissão de acesso ao banco de dados (PERMISSION_DENIED: libere as regras do Realtime Database.</div>';
+      });
+      db.ref('usuarios').on('value', snap => {
+        usuariosCache = snap.val() || {};
+        renderAdmin();
+      });
+
+      function nomeSt(st) {
+        return st === 'online' ? 'ATIVO' : st === 'ocupado' ? 'EM CHAMADA' : st === 'dnd' ? 'NÃO PERTURBE' : 'INATIVO';
+      }
+
+      function renderPainel() {
+        const el = document.getElementById('painelLista');
+        const nums = Object.keys(ramaisCache).sort((a, b) => a - b);
+        if (!nums.length) {
+          el.innerHTML = '<div class="sub">Nenhum ramal cadastrado.</div>';
+          return;
+        }
+        el.innerHTML = nums.map(n => {
+          const r = ramaisCache[n],
+            st = r.status || 'offline';
+          return `<div class="item"><span class="st ${st}"></span><span class="num">${esc(n)}</span>
+      <span class="nome">${esc(r.nome)}${r.setor?' • '+esc(r.setor):''}</span>
+      <span class="tag ${st==='online'?'on':st==='ocupado'?'oc':st==='dnd'?'dd':''}">${nomeSt(st)}</span></div>`;
+        }).join('');
+      }
+
+      /* ============ CADASTRO / LOGIN ============ */
+      async function cadastrar() {
+        const nome = document.getElementById('cNome').value.trim();
+        const setor = document.getElementById('cSetor').value.trim();
+        const login = document.getElementById('cUser').value.trim().toLowerCase();
+        const pass = document.getElementById('cPass').value;
+        const ramal = document.getElementById('cRamal').value.trim();
+        const err = document.getElementById('cErr');
+        err.innerText = '';
+        if (!nome || !login || !pass || !ramal) return err.innerText = "Preencha os campos obrigatórios.";
+        if (!/^[a-z0-9.\-_]+$/.test(login)) return err.innerText = "Usuário: só letras, números, ponto e traço.";
+        if (pass.length < 4) return err.innerText = "Senha muito curta (mín. 4).";
+        if (!window.crypto || !crypto.subtle) return err.innerText = "Abra em HTTPS (ou localhost).";
+        try {
+          err.innerText = "Verificando…";
+          if ((await db.ref('usuarios/' + login).once('value')).exists()) {
+            err.innerText = "Este usuário já existe.";
+            return;
+          }
+          if ((await db.ref('ramais/' + ramal).once('value')).exists()) {
+            err.innerText = "O ramal " + ramal + " já pertence a outro usuário.";
+            return;
+          }
+          const total = (await db.ref('usuarios').once('value')).numChildren();
+          await db.ref('usuarios/' + login).set({
+            nome,
+            setor,
+            senha: await hash(pass),
+            ramal,
+            admin: total === 0,
+            criado: Date.now()
+          });
+          await db.ref('ramais/' + ramal).set({
+            nome,
+            setor,
+            usuario: login,
+            status: 'offline',
+            atualizado: Date.now()
+          });
+          db.ref('logs').push({
+            ts: Date.now(),
+            quem: login,
+            ramal,
+            acao: 'Cadastro de conta'
+          });
+          err.innerText = '';
+          toast(total === 0 ? "Conta criada! Você é o ADMINISTRADOR." : "Conta criada!");
+          document.getElementById('lUser').value = login;
+          mostrarLogin();
+        } catch (e) {
+          err.innerText = String(e).includes('PERMISSION') ? "Sem permissão no banco de dados: libere as regras do Realtime Database." : "Erro: " + (e.message || e);
+        }
+      }
+
+      async function login() {
+        const l = document.getElementById('lUser').value.trim().toLowerCase();
+        const p = document.getElementById('lPass').value;
+        const err = document.getElementById('lErr');
+        err.innerText = '';
+        if (!l || !p) return err.innerText = "Preencha usuário e senha.";
+        let snap;
+        try {
+          snap = await db.ref('usuarios/' + l).once('value');
+        } catch (e) {
+          return err.innerText = String(e).includes('PERMISSION') ? "Sem permissão no banco de dados: libere as regras." : "Erro de conexão.";
+        }
+        if (!snap.exists()) return err.innerText = "Usuário não encontrado.";
+        const u = snap.val();
+        if (u.senha !== await hash(p)) return err.innerText = "Senha incorreta.";
+        usuario = {
+          login: l,
+          nome: u.nome,
+          setor: u.setor || '',
+          ramal: String(u.ramal),
+          admin: !!u.admin,
+          desvio: u.desvio || '',
+          favoritos: u.favoritos || {}
+        };
+        localStorage.setItem('sessao', JSON.stringify({
+          l,
+          h: u.senha
+        }));
+        logAud('Login');
+        entrarNoSistema();
+      }
+
+      function entrarNoSistema() {
+        document.getElementById('cardLogin').classList.add('hide');
+        document.getElementById('cardCadastro').classList.add('hide');
+        document.getElementById('cardPerfil').classList.remove('hide');
+        document.getElementById('pRamal').innerText = usuario.ramal;
+        document.getElementById('pNome').innerText = usuario.nome + " (@" + usuario.login + ")";
+        document.getElementById('pNovoNome').value = usuario.nome;
+        document.getElementById('pNovoSetor').value = usuario.setor;
+        document.getElementById('pNovoRamal').value = usuario.ramal;
+        document.getElementById('pDesvio').value = usuario.desvio;
+        document.getElementById('hUser').innerText = "@" + usuario.login + (usuario.admin ? " • ADMIN" : "");
+        document.getElementById('hUser').classList.remove('hide');
+        document.getElementById('tbTelefone').classList.remove('hide');
+        document.getElementById('tbChat').classList.remove('hide');
+        document.getElementById('tbEstudos').classList.remove('hide');
+        if (window.Notification && Notification.permission === 'default') Notification.requestPermission();
+        iniciarPeer();
+        escutarHistorico();
+        escutarRecados();
+        escutarAvisos();
+        escutarTodosChats();
+        pontEscutarChamadas();
+        escutarSalas();
+        aba('telefone');
+      }
+
+      function logout() {
+        if (salaAtual) sairSala(true);
+        if (usuario) {
+          db.ref('ramais/' + usuario.ramal).update({
+            status: 'offline'
+          });
+          logAud('Logout');
+        }
+        localStorage.removeItem('sessao');
+        location.reload();
+      }
+
+      window.addEventListener('load', async () => {
+        const s = localStorage.getItem('sessao');
+        if (!s) return;
+        try {
+          const {
+            l,
+            h
+          } = JSON.parse(s);
+          const snap = await db.ref('usuarios/' + l).once('value');
+          if (snap.exists() && snap.val().senha === h) {
+            const u = snap.val();
+            usuario = {
+              login: l,
+              nome: u.nome,
+              setor: u.setor || '',
+              ramal: String(u.ramal),
+              admin: !!u.admin,
+              desvio: u.desvio || '',
+              favoritos: u.favoritos || {}
+            };
+            entrarNoSistema();
+          } else localStorage.removeItem('sessao');
+        } catch (e) {}
+      });
+
+      /* ============ PERFIL ============ */
+      async function salvarPerfil() {
+        const err = document.getElementById('pErr');
+        err.innerText = '';
+        const nNome = document.getElementById('pNovoNome').value.trim();
+        const nSetor = document.getElementById('pNovoSetor').value.trim();
+        const nRamal = document.getElementById('pNovoRamal').value.trim();
+        const nDesvio = document.getElementById('pDesvio').value.trim();
+        if (!nNome || !nRamal) return err.innerText = "Preencha nome e ramal.";
+        if (nDesvio === nRamal) return err.innerText = "Desvio não pode ser o próprio ramal.";
+        try {
+          if (nRamal !== usuario.ramal) {
+            if ((await db.ref('ramais/' + nRamal).once('value')).exists()) return err.innerText = "Ramal " + nRamal + " em uso.";
+            await db.ref('ramais/' + usuario.ramal).remove();
+            await db.ref('ramais/' + nRamal).set({
+              nome: nNome,
+              setor: nSetor,
+              usuario: usuario.login,
+              status: 'offline',
+              desvio: nDesvio
+            });
+          } else {
+            await db.ref('ramais/' + usuario.ramal).update({
+              nome: nNome,
+              setor: nSetor,
+              desvio: nDesvio
+            });
+          }
+          await db.ref('usuarios/' + usuario.login).update({
+            nome: nNome,
+            setor: nSetor,
+            ramal: nRamal,
+            desvio: nDesvio
+          });
+          logAud('Alterou perfil' + (nRamal !== usuario.ramal ? ' (ramal ' + usuario.ramal + ' → ' + nRamal + ')' : ''));
+          toast("Perfil salvo! Reconectando…");
+          setTimeout(() => location.reload(), 900);
+        } catch (e) {
+          err.innerText = "Erro: " + (e.message || e);
+        }
+      }
+
+      /* ============ PEER ============ */
+      async function iniciarPeer() {
+        await carregarICE();
+        peer = new Peer(PREFIX + usuario.ramal, {
+          config: ICE
+        });
+        peer.on('open', () => {
+          document.getElementById('dot').classList.add('on');
+          document.getElementById('connTxt').innerText = 'conectado';
+          const ref = db.ref('ramais/' + usuario.ramal);
+          ref.update({
+            status: 'online',
+            nome: usuario.nome,
+            setor: usuario.setor,
+            usuario: usuario.login,
+            desvio: usuario.desvio,
+            atualizado: Date.now()
+          });
+          ref.onDisconnect().update({
+            status: 'offline'
+          });
+        });
+
+        peer.on('call', async (call) => {
+          const origem = (call.peer || '').replace(PREFIX, '');
+          /* chamadas de sala de estudo: auto-atende em malha */
+          if (call.metadata && call.metadata.sala) {
+            if (salaAtual && call.metadata.sala === salaAtual) await salaAtenderMesh(origem, call);
+            else call.close();
+            return;
+          }
+          if (salaAtual) {
+            call.close();
+            return;
+          } /* ocupado estudando */
+          /* aviso geral: auto-atende só ouvindo */
+          if (autoAtenderDe && origem === autoAtenderDe) {
+            await prepararAudio(false);
+            const d = ctx.createMediaStreamDestination();
+            call.answer(d.stream);
+            participantes[origem] = {
+              call,
+              conn: null,
+              dest: d,
+              source: null
+            };
+            emChamada = true;
+            listenOnly = true;
+            mostrarOverlayChamando(origem);
+            document.getElementById('ovT1').innerText = "Aviso geral";
+            call.on('stream', rs => {
+              conectadoUI();
+              registrarRemoto(origem, rs);
+            });
+            call.on('close', () => removerParticipante(origem));
+            return;
+          }
+          /* não perturbe */
+          if (meuStatus() === 'dnd') {
+            call.close();
+            return;
+          }
+          /* já em chamada → segunda chamada (espera) */
+          if (emChamada) {
+            if (esperaEntrada) {
+              call.close();
+              return;
+            }
+            esperaEntrada = call;
+            document.getElementById('bnRamal').innerText = origem;
+            document.getElementById('bnNome').innerText = nomeDo(origem);
+            document.getElementById('banner').style.display = 'block';
+            notificar("Segunda chamada", "Ramal " + origem + " está chamando");
+            call.on('close', () => {
+              if (esperaEntrada === call) {
+                esperaEntrada = null;
+                document.getElementById('banner').style.display = 'none';
+              }
+            });
+            return;
+          }
+          chamadaEntrada = call;
+          mostrarOverlayRecebendo(origem);
+          if (call.metadata && call.metadata.video) document.getElementById('ovT1').innerText = "Chamada de vídeo recebida";
+          tocarRing();
+          notificar("Chamada do ramal " + origem, nomeDo(origem) || "Central de Ramais");
+          clearTimeout(ringSafety);
+          ringSafety = setTimeout(() => {
+            if (chamadaEntrada === call && !emChamada) {
+              pararRing();
+              try {
+                call.close();
+              } catch (e) {}
+              chamadaEntrada = null;
+              fecharOverlay();
+              registrarHist({
+                com: origem,
+                tipo: 'perdida',
+                dir: 'recebida',
+                dur: 0
+              });
+            }
+          }, 45000);
+          call.on('close', () => {
+            if (!emChamada && chamadaEntrada === call) {
+              pararRing();
+              clearTimeout(ringSafety);
+              fecharOverlay();
+              chamadaEntrada = null;
+              registrarHist({
+                com: origem,
+                tipo: 'perdida',
+                dir: 'recebida',
+                dur: 0
+              });
+            }
+          });
+        });
+
+        peer.on('connection', conn => {
+          conn.on('data', d => tratarMensagem(conn, d));
+        });
+
+        peer.on('error', err => {
+          if (err.type === 'unavailable-id') {
+            alert("Seu ramal já está ativo em outro aparelho.");
+            logout();
+          } else if (err.type === 'peer-unavailable') {
+            toast("Ramal indisponível.");
+            if (chamandoPara && !chamadaAtendida) semResposta(chamandoPara);
+          } else {
+            console.error(err);
+            toast("Erro: " + err.type);
+          }
+        });
+        peer.on('disconnected', () => {
+          document.getElementById('dot').classList.remove('on');
+          document.getElementById('connTxt').innerText = 'reconectando…';
+          setTimeout(() => {
+            try {
+              peer.reconnect();
+            } catch (e) {}
+          }, 1500);
+        });
+      }
+
+      function meuStatus() {
+        return (ramaisCache[usuario.ramal] || {}).status || 'online';
+      }
+
+      /* ============ DND ============ */
+      function toggleDnd() {
+        const atual = meuStatus();
+        const novo = atual === 'dnd' ? 'online' : 'dnd';
+        db.ref('ramais/' + usuario.ramal).update({
+          status: novo
+        });
+        document.getElementById('dndTxt').innerText = novo === 'dnd' ? "Não perturbe: ativado" : "Não perturbe: desativado";
+        document.getElementById('btnDnd').classList.toggle('br', novo === 'dnd');
+        logAud(novo === 'dnd' ? 'Ativou Não Perturbe' : 'Desativou Não Perturbe');
+      }
+
+      /* ============ ÁUDIO / CONFERÊNCIA ============ */
+      /* ===== manter viva durante a chamada ===== */
+      let wakeLock = null,
+        masterOut = null,
+        masterAudio = null;
+      async function pedirWakeLock() {
+        try {
+          if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
+        } catch (e) {}
+      }
+
+      function soltarWakeLock() {
+        try {
+          wakeLock && wakeLock.release();
+        } catch (e) {}
+        wakeLock = null;
+      }
+      document.addEventListener('visibilitychange', async () => {
+        if (document.visibilityState === 'visible') {
+          if (emChamada) pedirWakeLock();
+          if (ctx && ctx.state === 'suspended') {
+            try {
+              await ctx.resume();
+            } catch (e) {}
+          }
+          if (peer && peer.disconnected) {
+            try {
+              peer.reconnect();
+            } catch (e) {}
+          }
+        }
+      });
+
+      async function prepararAudio(comMic = true) {
+        if (!ctx) {
+          ctx = new(window.AudioContext || window.webkitAudioContext)();
+          ctx.onstatechange = () => {
+            if (ctx && ctx.state === 'suspended' && emChamada) {
+              try {
+                ctx.resume();
+              } catch (e) {}
+            }
+          };
+        }
+        if (ctx.state === 'suspended') ctx.resume();
+        if (!masterOut) {
+          masterOut = ctx.createMediaStreamDestination();
+          masterAudio = new Audio();
+          masterAudio.srcObject = masterOut.stream;
+          masterAudio.autoplay = true;
+          masterAudio.play().catch(() => {});
+        }
+        pedirWakeLock();
+        if (comMic && !micStream) {
+          micStream = await navigator.mediaDevices.getUserMedia({
+            audio: true
+          });
+          micSource = ctx.createMediaStreamSource(micStream);
+        }
+      }
+
+      function novoDest() {
+        const d = ctx.createMediaStreamDestination();
+        if (micSource) micSource.connect(d);
+        return d;
+      }
+
+      function garantirHoldMusic() {
+        if (holdOsc) return;
+        holdGain = ctx.createGain();
+        holdGain.gain.value = 0.08;
+        holdOsc = ctx.createOscillator();
+        holdOsc.type = 'sine';
+        holdOsc.frequency.value = 440;
+        const lfo = ctx.createOscillator();
+        lfo.frequency.value = 0.5;
+        const lfoG = ctx.createGain();
+        lfoG.gain.value = 120;
+        lfo.connect(lfoG);
+        lfoG.connect(holdOsc.frequency);
+        holdOsc.connect(holdGain);
+        holdOsc.start();
+        lfo.start();
+      }
+
+      function registrarRemoto(ramal, remoteStream) {
+        const p = participantes[ramal];
+        if (!p) return;
+        const ghost = new Audio();
+        ghost.srcObject = remoteStream;
+        ghost.muted = true;
+        ghost.play().catch(() => {});
+        p.ghost = ghost;
+        p.source = ctx.createMediaStreamSource(remoteStream);
+        p.source.connect(masterOut);
+        Object.entries(participantes).forEach(([r, o]) => {
+          if (r !== ramal && o.dest) p.source.connect(o.dest);
+          if (r !== ramal && o.source) o.source.connect(p.dest);
+        });
+        atualizarParts();
+      }
+
+      function temParticipantes() {
+        return Object.keys(participantes).length > 0;
+      }
+
+      /* ============ LIGAR ============ */
+      async function ligarPara(destino, opts = {}) {
+        destino = String(destino || '').trim();
+        if (!destino) return toast("Digite o ramal.");
+        if (destino === usuario.ramal) return toast("Não pode ligar para si mesmo.");
+        if (salaAtual) return toast("Saia da sala de estudos para fazer chamadas.");
+        if (participantes[destino] || emEspera[destino]) return toast("Este ramal já está na chamada.");
+        const info = ramaisCache[destino];
+        if (!info) return toast("Ramal " + destino + " não existe.");
+        const st = info.status || 'offline';
+        if (st === 'dnd' || st === 'offline') {
+          /* desvio configurado? */
+          if (info.desvio && !opts.semDesvio && ramaisCache[info.desvio] && (ramaisCache[info.desvio].status === 'online')) {
+            toast("Ramal " + destino + " indisponível. Desviando para " + info.desvio + "…");
+            return ligarPara(info.desvio, {
+              semDesvio: true
+            });
+          }
+          /* correio de voz */
+          return oferecerRecado(destino, st === 'dnd' ? "está em Não Perturbe" : "está offline");
+        }
+        try {
+          await prepararAudio(true);
+        } catch (e) {
+          return alert("Permita o acesso ao microfone!");
+        }
+        if (opts.video && !camStream) {
+          try {
+            camStream = await navigator.mediaDevices.getUserMedia({
+              video: {
+                facingMode: 'user'
+              }
+            });
+          } catch (e) {
+            toast("Câmera indisponível — seguindo só com áudio.");
+          }
+        }
+        ultimoDiscado = destino;
+        const dest = novoDest();
+        let outStream = dest.stream;
+        if (camStream) {
+          outStream = new MediaStream([...dest.stream.getAudioTracks(), camStream.getVideoTracks()[0]]);
+          mostrarVideoLocal();
+        }
+        const call = peer.call(PREFIX + destino, outStream, {
+          metadata: {
+            video: !!camStream
+          }
+        });
+        const conn = peer.connect(PREFIX + destino);
+        participantes[destino] = {
+          call,
+          conn,
+          dest,
+          source: null
+        };
+        conn.on('data', d => tratarMensagem(conn, d));
+
+        if (!emChamada) {
+          emChamada = true;
+          chamadaAtendida = false;
+          chamandoPara = destino;
+          db.ref('ramais/' + usuario.ramal).update({
+            status: 'ocupado'
+          });
+          mostrarOverlayChamando(destino);
+          /* timeout 20s → desvio / recado */
+          timeoutChamada = setTimeout(() => {
+            if (!chamadaAtendida) semResposta(destino);
+          }, 20000);
+        } else {
+          atualizarParts();
+          toast("Chamando ramal " + destino + "…");
+        }
+
+        call.on('stream', rs => {
+          chamadaAtendida = true;
+          chamandoPara = null;
+          clearTimeout(timeoutChamada);
+          if (!inicioChamadaTs) inicioChamadaTs = Date.now();
+          conectadoUI();
+          registrarRemoto(destino, rs);
+          mostrarVideoRemoto(rs);
+          setTimeout(() => checarRelay(destino), 3000);
+          if (opts.aoAtender) opts.aoAtender();
+        });
+        call.on('close', () => removerParticipante(destino));
+      }
+
+      function semResposta(destino) {
+        const info = ramaisCache[destino] || {};
+        const p = participantes[destino];
+        if (p) {
+          enviarCancel(destino, p);
+          setTimeout(() => {
+            try {
+              p.call.close();
+            } catch (e) {}
+            try {
+              p.conn && p.conn.close();
+            } catch (e) {}
+          }, 450);
+          delete participantes[destino];
+        }
+        registrarHist({
+          com: destino,
+          tipo: 'nao-atendida',
+          dir: 'feita',
+          dur: 0
+        });
+        if (info.desvio && ramaisCache[info.desvio] && ramaisCache[info.desvio].status === 'online') {
+          toast("Sem resposta. Desviando para o ramal " + info.desvio + "…");
+          chamandoPara = null;
+          ligarPara(info.desvio, {
+            semDesvio: true
+          });
+          return;
+        }
+        oferecerRecado(destino, "não atendeu");
+      }
+
+      function rediscar() {
+        if (ultimoDiscado) ligarPara(ultimoDiscado);
+        else toast("Nenhuma chamada recente.");
+      }
+
+      /* ============ CHAMADA EM GRUPO (SETOR) ============ */
+      async function ligarSetor(setor) {
+        setor = String(setor || '').trim().toLowerCase();
+        if (!setor) return toast("Digite o setor.");
+        const alvos = Object.keys(ramaisCache).filter(n =>
+          n !== usuario.ramal &&
+          (ramaisCache[n].setor || '').toLowerCase() === setor &&
+          ramaisCache[n].status === 'online');
+        if (!alvos.length) return toast("Nenhum ramal online no setor \"" + setor + "\".");
+        try {
+          await prepararAudio(true);
+        } catch (e) {
+          return alert("Permita o microfone!");
+        }
+        emChamada = true;
+        grupoPendentes = new Set(alvos);
+        db.ref('ramais/' + usuario.ramal).update({
+          status: 'ocupado'
+        });
+        mostrarOverlayChamando(alvos.join(', '));
+        document.getElementById('ovT1').innerText = "Chamando setor";
+        alvos.forEach(dst => {
+          const dest = novoDest();
+          const call = peer.call(PREFIX + dst, dest.stream);
+          const conn = peer.connect(PREFIX + dst);
+          participantes[dst] = {
+            call,
+            conn,
+            dest,
+            source: null
+          };
+          conn.on('data', d => tratarMensagem(conn, d));
+          call.on('stream', rs => {
+            if (grupoPendentes) {
+              /* primeiro que atender fica; cancela os demais */
+              grupoPendentes.delete(dst);
+              grupoPendentes.forEach(o => {
+                if (o !== dst) {
+                  enviarCancel(o, participantes[o]);
+                  removerParticipante(o, true);
+                }
+              });
+              grupoPendentes = null;
+            }
+            if (!inicioChamadaTs) inicioChamadaTs = Date.now();
+            conectadoUI();
+            registrarRemoto(dst, rs);
+          });
+          call.on('close', () => removerParticipante(dst));
+        });
+        setTimeout(() => {
+          if (grupoPendentes && !temParticipantesComStream()) encerrarTudo();
+        }, 25000);
+      }
+
+      function temParticipantesComStream() {
+        return Object.values(participantes).some(p => p.source);
+      }
+
+      /* ============ AVISO GERAL (PAGING) ============ */
+      async function avisoGeral() {
+        const online = Object.keys(ramaisCache).filter(n => n !== usuario.ramal && ['online'].includes(ramaisCache[n].status));
+        if (!online.length) return toast("Ninguém online para ouvir o aviso.");
+        if (!confirm("Falar agora com " + online.length + " ramal(is) online? Eles ouvirão automaticamente.")) return;
+        await db.ref('aviso').set({
+          de: usuario.ramal,
+          ts: Date.now()
+        });
+        try {
+          await prepararAudio(true);
+        } catch (e) {
+          return alert("Permita o microfone!");
+        }
+        emChamada = true;
+        db.ref('ramais/' + usuario.ramal).update({
+          status: 'ocupado'
+        });
+        mostrarOverlayChamando('Todos');
+        document.getElementById('ovT1').innerText = "Aviso geral — pode falar";
+        logAud('Enviou aviso geral');
+        setTimeout(() => {
+          online.forEach(dst => {
+            const dest = novoDest();
+            const call = peer.call(PREFIX + dst, dest.stream);
+            participantes[dst] = {
+              call,
+              conn: null,
+              dest,
+              source: null
+            };
+            call.on('stream', rs => {
+              conectadoUI(); /* não registra p/ não ouvir de volta */
+              atualizarParts();
+            });
+            call.on('close', () => removerParticipante(dst));
+          });
+        }, 800);
+      }
+
+      function escutarAvisos() {
+        db.ref('aviso').on('value', snap => {
+          const a = snap.val();
+          if (!a || a.de === usuario.ramal) return;
+          if (Date.now() - a.ts > 15000) return;
+          autoAtenderDe = a.de;
+          clearTimeout(autoAtenderTimer);
+          autoAtenderTimer = setTimeout(() => autoAtenderDe = null, 30000);
+          toast("Aviso geral do ramal " + a.de + " começando…");
+        });
+      }
+
+      /* ============ ATENDER / RECUSAR ============ */
+      async function atender() {
+        pararRing();
+        clearTimeout(ringSafety);
+        try {
+          await prepararAudio(true);
+        } catch (e) {
+          return alert("Permita o microfone!");
+        }
+        const origem = (chamadaEntrada.peer || '').replace(PREFIX, '');
+        const querVideo = chamadaEntrada.metadata && chamadaEntrada.metadata.video;
+        if (querVideo && !camStream) {
+          try {
+            camStream = await navigator.mediaDevices.getUserMedia({
+              video: {
+                facingMode: 'user'
+              }
+            });
+            mostrarVideoLocal();
+          } catch (e) {
+            toast("Câmera indisponível — atendendo só com áudio.");
+          }
+        }
+        const dest = novoDest();
+        let ansStream = dest.stream;
+        if (camStream) ansStream = new MediaStream([...dest.stream.getAudioTracks(), camStream.getVideoTracks()[0]]);
+        chamadaEntrada.answer(ansStream);
+        participantes[origem] = {
+          call: chamadaEntrada,
+          conn: null,
+          dest,
+          source: null
+        };
+        emChamada = true;
+        inicioChamadaTs = Date.now();
+        db.ref('ramais/' + usuario.ramal).update({
+          status: 'ocupado'
+        });
+        chamadaEntrada.on('stream', rs => {
+          conectadoUI();
+          registrarRemoto(origem, rs);
+          mostrarVideoRemoto(rs);
+          setTimeout(() => checarRelay(origem), 3000);
+        });
+        chamadaEntrada.on('close', () => removerParticipante(origem));
+        registrarHist({
+          com: origem,
+          tipo: 'atendida',
+          dir: 'recebida',
+          dur: 0,
+          _id: true
+        });
+        chamadaEntrada = null;
+        conectadoUI();
+      }
+
+      function recusar() {
+        pararRing();
+        clearTimeout(ringSafety);
+        if (chamadaEntrada) {
+          const origem = (chamadaEntrada.peer || '').replace(PREFIX, '');
+          registrarHist({
+            com: origem,
+            tipo: 'recusada',
+            dir: 'recebida',
+            dur: 0
+          });
+          try {
+            chamadaEntrada.close();
+          } catch (e) {}
+          chamadaEntrada = null;
+        }
+        fecharOverlay();
+      }
+
+      /* ============ SEGUNDA CHAMADA (ESPERA) ============ */
+      async function atenderEspera() {
+        if (!esperaEntrada) return;
+        document.getElementById('banner').style.display = 'none';
+        colocarTudoEmEspera();
+        const origem = (esperaEntrada.peer || '').replace(PREFIX, '');
+        const dest = novoDest();
+        esperaEntrada.answer(dest.stream);
+        participantes[origem] = {
+          call: esperaEntrada,
+          conn: null,
+          dest,
+          source: null
+        };
+        esperaEntrada.on('stream', rs => {
+          conectadoUI();
+          registrarRemoto(origem, rs);
+        });
+        esperaEntrada.on('close', () => removerParticipante(origem));
+        registrarHist({
+          com: origem,
+          tipo: 'atendida',
+          dir: 'recebida',
+          dur: 0
+        });
+        esperaEntrada = null;
+        document.getElementById('btnAlternar').classList.remove('hide');
+        toast("Chamada anterior em espera. Use o botão Alternar.");
+        atualizarParts();
+      }
+
+      function recusarEspera() {
+        if (esperaEntrada) {
+          const origem = (esperaEntrada.peer || '').replace(PREFIX, '');
+          registrarHist({
+            com: origem,
+            tipo: 'recusada',
+            dir: 'recebida',
+            dur: 0
+          });
+          try {
+            esperaEntrada.close();
+          } catch (e) {}
+          esperaEntrada = null;
+        }
+        document.getElementById('banner').style.display = 'none';
+      }
+
+      function colocarTudoEmEspera() {
+        garantirHoldMusic();
+        Object.entries(participantes).forEach(([r, p]) => {
+          try {
+            micSource && micSource.disconnect(p.dest);
+          } catch (e) {}
+          try {
+            p.source && p.source.disconnect(masterOut);
+          } catch (e) {}
+          try {
+            holdGain.connect(p.dest);
+          } catch (e) {}
+          emEspera[r] = p;
+        });
+        participantes = {};
+      }
+
+      function retomarEspera() {
+        Object.entries(emEspera).forEach(([r, p]) => {
+          try {
+            holdGain && holdGain.disconnect(p.dest);
+          } catch (e) {}
+          try {
+            micSource && micSource.connect(p.dest);
+          } catch (e) {}
+          try {
+            p.source && p.source.connect(masterOut);
+          } catch (e) {}
+          participantes[r] = p;
+        });
+        emEspera = {};
+      }
+
+      function alternarChamadas() {
+        if (!Object.keys(emEspera).length) return toast("Nada em espera.");
+        const ativos = participantes;
+        participantes = {};
+        const held = emEspera;
+        emEspera = {};
+        /* segura os ativos */
+        garantirHoldMusic();
+        Object.entries(ativos).forEach(([r, p]) => {
+          try {
+            micSource && micSource.disconnect(p.dest);
+          } catch (e) {}
+          try {
+            p.source && p.source.disconnect(masterOut);
+          } catch (e) {}
+          try {
+            holdGain.connect(p.dest);
+          } catch (e) {}
+          emEspera[r] = p;
+        });
+        /* retoma os que estavam em espera */
+        Object.entries(held).forEach(([r, p]) => {
+          try {
+            holdGain && holdGain.disconnect(p.dest);
+          } catch (e) {}
+          try {
+            micSource && micSource.connect(p.dest);
+          } catch (e) {}
+          try {
+            p.source && p.source.connect(masterOut);
+          } catch (e) {}
+          participantes[r] = p;
+        });
+        atualizarParts();
+        toast("Alternado.");
+      }
+
+      function toggleHoldTudo() {
+        if (!holdTudo) {
+          colocarTudoEmEspera();
+          holdTudo = true;
+          document.getElementById('holdTxt').innerText = "Retomar";
+          toast("Chamada em espera (musiquinha tocando).");
+        } else {
+          retomarEspera();
+          holdTudo = false;
+          document.getElementById('holdTxt').innerText = "Espera";
+        }
+        atualizarParts();
+      }
+
+      /* ============ TRANSFERÊNCIA ============ */
+      function enviarCancel(r, p) {
+        try {
+          if (p && p.conn && p.conn.open) {
+            p.conn.send({
+              type: 'cancel',
+              de: usuario.ramal
+            });
+            return;
+          }
+        } catch (e) {}
+        try {
+          const c = peer.connect(PREFIX + r);
+          c.on('open', () => {
+            c.send({
+              type: 'cancel',
+              de: usuario.ramal
+            });
+            setTimeout(() => {
+              try {
+                c.close();
+              } catch (e) {}
+            }, 500);
+          });
+        } catch (e) {}
+      }
+
+      function tratarMensagem(conn, d) {
+        if (!d || !d.type) return;
+        if (d.type === 'cancel') {
+          const de = String(d.de);
+          if (chamadaEntrada && (chamadaEntrada.peer || '').replace(PREFIX, '') === de) {
+            pararRing();
+            clearTimeout(ringSafety);
+            registrarHist({
+              com: de,
+              tipo: 'perdida',
+              dir: 'recebida',
+              dur: 0
+            });
+            try {
+              chamadaEntrada.close();
+            } catch (e) {}
+            chamadaEntrada = null;
+            fecharOverlay();
+            toast("Chamada de " + de + " cancelada.");
+          }
+          if (esperaEntrada && (esperaEntrada.peer || '').replace(PREFIX, '') === de) {
+            try {
+              esperaEntrada.close();
+            } catch (e) {}
+            esperaEntrada = null;
+            document.getElementById('banner').style.display = 'none';
+          }
+          return;
+        }
+        if (d.type === 'transfer') {
+          toast("Você foi transferido para o ramal " + d.para + "…");
+          const alvo = String(d.para);
+          encerrarTudo();
+          setTimeout(() => ligarPara(alvo), 700);
+        }
+      }
+
+      function togglePainel(modo) {
+        const pe = document.getElementById('painelExtra');
+        if (modoExtra === modo) {
+          modoExtra = null;
+          pe.classList.add('hide');
+          return;
+        }
+        modoExtra = modo;
+        pe.classList.remove('hide');
+        document.getElementById('btnExtra').innerText = modo === 'add' ? "Adicionar" : modo === 'transf' ? "Transferir" : "Consultar";
+        document.getElementById('inpExtra').value = '';
+        document.getElementById('inpExtra').focus();
+      }
+
+      function confirmarExtra() {
+        const alvo = document.getElementById('inpExtra').value.trim();
+        if (!alvo) return toast("Digite o ramal.");
+        if (modoExtra === 'add') ligarPara(alvo);
+        else if (modoExtra === 'transf') transferirCega(alvo);
+        else if (modoExtra === 'consulta') iniciarConsulta(alvo);
+        modoExtra = null;
+        document.getElementById('painelExtra').classList.add('hide');
+      }
+
+      function transferirCega(alvo) {
+        alvo = String(alvo).trim();
+        if (alvo === usuario.ramal) return toast("Não pode transferir para si mesmo.");
+        const outros = Object.keys(participantes);
+        if (!outros.length) return toast("Ninguém para transferir.");
+        outros.forEach(r => {
+          const p = participantes[r];
+          const send = () => {
+            try {
+              p.conn.send({
+                type: 'transfer',
+                para: alvo,
+                de: usuario.ramal
+              });
+            } catch (e) {}
+          };
+          if (p.conn && p.conn.open) send();
+          else if (p.conn) p.conn.on('open', send);
+          else {
+            /* sem conn (ex: recebi a chamada) — cria uma */
+            const c = peer.connect(PREFIX + r);
+            c.on('open', () => c.send({
+              type: 'transfer',
+              para: alvo,
+              de: usuario.ramal
+            }));
+          }
+        });
+        logAud('Transferiu chamada para ' + alvo);
+        toast("Transferindo para " + alvo + "…");
+        setTimeout(encerrarTudo, 800);
+      }
+      async function iniciarConsulta(alvo) {
+        alvo = String(alvo).trim();
+        if (!Object.keys(participantes).length) return toast("Ninguém na chamada.");
+        const info = ramaisCache[alvo];
+        if (!info || info.status !== 'online') return toast("Ramal " + alvo + " não está disponível.");
+        colocarTudoEmEspera();
+        consultando = {
+          alvo
+        };
+        document.getElementById('btnCompletar').classList.remove('hide');
+        toast("Chamada em espera. Falando com " + alvo + "…");
+        ligarPara(alvo, {
+          semDesvio: true
+        });
+      }
+
+      function completarConsulta() {
+        if (!consultando) return;
+        const alvo = consultando.alvo;
+        /* desliga a consulta */
+        const pc = participantes[alvo];
+        if (pc) {
+          try {
+            pc.call.close();
+          } catch (e) {}
+          try {
+            pc.conn && pc.conn.close();
+          } catch (e) {}
+          delete participantes[alvo];
+        }
+        /* manda os em espera ligarem para o alvo */
+        Object.keys(emEspera).forEach(r => {
+          const c = peer.connect(PREFIX + r);
+          c.on('open', () => c.send({
+            type: 'transfer',
+            para: alvo,
+            de: usuario.ramal
+          }));
+        });
+        logAud('Transferência com consulta para ' + alvo);
+        toast("Transferência concluída para " + alvo + ".");
+        consultando = null;
+        document.getElementById('btnCompletar').classList.add('hide');
+        setTimeout(encerrarTudo, 800);
+      }
+
+      /* ============ DETECÇÃO DE RELAY (TURN) ============ */
+      let avisouRelayVideo = false;
+      async function checarRelay(ramal) {
+        const p = participantes[ramal];
+        if (!p || !p.call || !p.call.peerConnection) return;
+        try {
+          const stats = await p.call.peerConnection.getStats();
+          const cands = {};
+          let pairId = null;
+          stats.forEach(r => {
+            cands[r.id] = r;
+            if (r.type === 'transport' && r.selectedCandidatePairId) pairId = r.selectedCandidatePairId;
+            if (!pairId && r.type === 'candidate-pair' && (r.selected || r.nominated) && r.state === 'succeeded') pairId = r.id;
+          });
+          const pair = cands[pairId];
+          if (!pair) return;
+          const loc = cands[pair.localCandidateId],
+            rem = cands[pair.remoteCandidateId];
+          p.relay = (loc && loc.candidateType === 'relay') || (rem && rem.candidateType === 'relay');
+          atualizarRelayUI();
+        } catch (e) {}
+      }
+
+      function atualizarRelayUI() {
+        const algum = Object.values(participantes).some(p => p.relay);
+        const av = document.getElementById('relayAviso');
+        if (av) av.classList.toggle('hide', !algum);
+        const vidAtivo = !!(camStream && camStream.getVideoTracks()[0] && camStream.getVideoTracks()[0].enabled);
+        const rv = document.getElementById('relayVid');
+        if (rv) rv.classList.toggle('hide', !(algum && vidAtivo));
+        if (algum && vidAtivo && !avisouRelayVideo) {
+          avisouRelayVideo = true;
+          toast("Atenção: o vídeo está passando pelo servidor intermediário e consome sua cota mensal. Desligue a câmera se quiser economizar.");
+        }
+      }
+
+      /* ============ VÍDEO ============ */
+      function mostrarVideoLocal() {
+        const v = document.getElementById('vLocal');
+        v.srcObject = camStream;
+        v.play().catch(() => {});
+        document.getElementById('videoArea').classList.remove('hide');
+        document.getElementById('avatar').classList.add('hide');
+        document.getElementById('btnCam').classList.remove('hide');
+      }
+
+      function mostrarVideoRemoto(rs) {
+        if (!rs.getVideoTracks().length) return;
+        const v = document.getElementById('vRemote');
+        v.srcObject = rs;
+        v.play().catch(() => {});
+        document.getElementById('videoArea').classList.remove('hide');
+        document.getElementById('avatar').classList.add('hide');
+      }
+
+      function toggleCamera() {
+        if (!camStream) return;
+        const t = camStream.getVideoTracks()[0];
+        t.enabled = !t.enabled;
+        document.getElementById('camTxt').innerText = t.enabled ? "Desligar câmera" : "Ligar câmera";
+        atualizarRelayUI();
+      }
+
+      function limparVideo() {
+        if (camStream) {
+          camStream.getTracks().forEach(t => t.stop());
+          camStream = null;
+        }
+        ['vRemote', 'vLocal'].forEach(id => {
+          const v = document.getElementById(id);
+          if (v) v.srcObject = null;
+        });
+        document.getElementById('videoArea').classList.add('hide');
+        document.getElementById('avatar').classList.remove('hide');
+        document.getElementById('btnCam').classList.add('hide');
+        document.getElementById('camTxt').innerText = "Desligar câmera";
+      }
+
+      /* ============ CORREIO DE VOZ ============ */
+      function oferecerRecado(destino, motivo) {
+        recDestino = destino;
+        emChamada = false;
+        document.getElementById('ov').classList.add('show');
+        document.getElementById('avatar').classList.remove('ring');
+        document.getElementById('ovT1').innerText = "Correio de voz";
+        document.getElementById('ovT2').innerText = destino;
+        document.getElementById('ovT3').innerText = nomeDo(destino);
+        document.getElementById('acRecebendo').classList.add('hide');
+        document.getElementById('acEmChamada').classList.add('hide');
+        document.getElementById('timer').classList.add('hide');
+        document.getElementById('parts').innerHTML = '';
+        document.getElementById('gravInfo').innerText = "O ramal " + destino + " " + motivo + ". Deixe um recado (máx. 30s):";
+        document.getElementById('gravBox').classList.remove('hide');
+        document.getElementById('gravTxt').innerText = "Gravar recado";
+      }
+      async function gravarRecado() {
+        const btn = document.getElementById('btnGravar');
+        if (mediaRec && mediaRec.state === 'recording') {
+          mediaRec.stop();
+          return;
+        }
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: true
+          });
+          const chunks = [];
+          mediaRec = new MediaRecorder(stream);
+          mediaRec.ondataavailable = e => chunks.push(e.data);
+          mediaRec.onstop = () => {
+            clearTimeout(recTimer);
+            stream.getTracks().forEach(t => t.stop());
+            const blob = new Blob(chunks, {
+              type: mediaRec.mimeType || 'audio/webm'
+            });
+            if (blob.size > 900000) {
+              toast("Recado muito longo, tente de novo mais curto.");
+              cancelarRecado();
+              return;
+            }
+            const fr = new FileReader();
+            fr.onload = async () => {
+              await db.ref('recados/' + recDestino).push({
+                de: usuario.ramal,
+                deNome: usuario.nome,
+                ts: Date.now(),
+                mime: blob.type,
+                audio: fr.result
+              });
+              registrarHist({
+                com: recDestino,
+                tipo: 'recado',
+                dir: 'feita',
+                dur: 0
+              });
+              toast("Recado enviado para o ramal " + recDestino + "!");
+              cancelarRecado();
+            };
+            fr.readAsDataURL(blob);
+          };
+          mediaRec.start();
+          document.getElementById('gravTxt').innerText = "Parar e enviar";
+          recTimer = setTimeout(() => {
+            if (mediaRec.state === 'recording') mediaRec.stop();
+          }, 30000);
+        } catch (e) {
+          alert("Permita o microfone!");
+        }
+      }
+
+      function cancelarRecado() {
+        if (mediaRec && mediaRec.state === 'recording') {
+          mediaRec.onstop = null;
+          mediaRec.stop();
+        }
+        mediaRec = null;
+        recDestino = null;
+        document.getElementById('gravBox').classList.add('hide');
+        fecharOverlay();
+      }
+
+      function escutarRecados() {
+        db.ref('recados/' + usuario.ramal).on('value', snap => {
+          const dados = snap.val() || {};
+          const el = document.getElementById('listaRecados');
+          const keys = Object.keys(dados).sort((a, b) => dados[b].ts - dados[a].ts);
+          if (!keys.length) {
+            el.innerHTML = '<div class="sub">Nenhum recado.</div>';
+            return;
+          }
+          el.innerHTML = keys.map(k => {
+            const r = dados[k];
+            return `<div class="item" style="flex-wrap:wrap">
+        <span class="num">${esc(r.de)}</span>
+        <span class="nome">${esc(r.deNome)} • ${fmtTs(r.ts)}</span>
+        <button class="mini bgr" title="Excluir recado" onclick="apagarRecado('${k}')">${ic('trash')}</button>
+        <audio class="rec" controls src="${r.audio}"></audio>
+      </div>`;
+          }).join('');
+        });
+      }
+
+      function apagarRecado(k) {
+        db.ref('recados/' + usuario.ramal + '/' + k).remove();
+      }
+
+      /* ============ HISTÓRICO ============ */
+      function registrarHist(h) {
+        h.ts = Date.now();
+        db.ref('historico/' + usuario.ramal).push(h);
+        db.ref('relatorio').push({
+          ...h,
+          ramal: usuario.ramal
+        });
+      }
+
+      function escutarHistorico() {
+        db.ref('historico/' + usuario.ramal).limitToLast(40).on('value', snap => {
+          const dados = snap.val() || {};
+          const el = document.getElementById('listaHist');
+          const keys = Object.keys(dados).sort((a, b) => dados[b].ts - dados[a].ts);
+          if (!keys.length) {
+            el.innerHTML = '<div class="sub">Sem chamadas.</div>';
+            return;
+          }
+          let perdidas = 0;
+          const vistoAte = Number(localStorage.getItem('histVisto') || 0);
+          el.innerHTML = keys.map(k => {
+            const h = dados[k];
+            const hicN = h.tipo === 'perdida' ? 'miss' : h.tipo === 'recusada' ? 'x' : h.tipo === 'recado' ? 'vm' : h.dir === 'feita' ? 'out' : 'in';
+            if (h.tipo === 'perdida' && h.ts > vistoAte) perdidas++;
+            return `<div class="item"><span class="hic ${h.tipo==='perdida'?'miss':''}">${ic(hicN)}</span><span class="num">${esc(h.com)}</span>
+        <span class="nome ${h.tipo==='perdida'?'perdida':''}">${esc(nomeDo(h.com))} • ${h.tipo}${h.dur?' • '+fmtDur(h.dur):''} • ${fmtTs(h.ts)}</span>
+        <button class="mini bg" title="Ligar novamente" onclick="ligarPara('${esc(h.com)}')">${ic('phone')}</button></div>`;
+          }).join('');
+          const bd = document.getElementById('bdPerdidas');
+          if (perdidas > 0) {
+            bd.innerText = perdidas;
+            bd.classList.remove('hide');
+          } else bd.classList.add('hide');
+        });
+      }
+
+      function limparHist() {
+        localStorage.setItem('histVisto', Date.now());
+        if (confirm("Apagar todo o seu histórico?")) db.ref('historico/' + usuario.ramal).remove();
+        else document.getElementById('bdPerdidas').classList.add('hide');
+      }
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+          localStorage.setItem('histVisto', Date.now());
+          const b = document.getElementById('bdPerdidas');
+          if (b) b.classList.add('hide');
+        }
+      });
+
+      /* ============ ENCERRAR ============ */
+      function removerParticipante(ramal, silencioso) {
+        const p = participantes[ramal];
+        if (!p) return;
+        try {
+          p.call && p.call.close();
+        } catch (e) {}
+        try {
+          p.conn && p.conn.close();
+        } catch (e) {}
+        try {
+          p.source && p.source.disconnect();
+        } catch (e) {}
+        try {
+          p.ghost && (p.ghost.srcObject = null);
+        } catch (e) {}
+        delete participantes[ramal];
+        if (!temParticipantes() && !Object.keys(emEspera).length) {
+          if (!consultando && !recDestino) encerrarTudo();
+        } else if (!temParticipantes() && Object.keys(emEspera).length) {
+          retomarEspera();
+          atualizarParts();
+          toast("Retomando chamada em espera.");
+        } else {
+          atualizarParts();
+          if (!silencioso) toast("Ramal " + ramal + " saiu.");
+        }
+      }
+
+      function encerrarTudo() {
+        pararRing();
+        clearTimeout(timeoutChamada);
+        const dur = inicioChamadaTs ? Math.round((Date.now() - inicioChamadaTs) / 1000) : 0;
+        const todos = [...Object.keys(participantes), ...Object.keys(emEspera)];
+        if (dur > 0 && todos.length) registrarHist({
+          com: todos.join(','),
+          tipo: 'concluida',
+          dir: 'feita',
+          dur
+        });
+        [participantes, emEspera].forEach(g => Object.entries(g).forEach(([r, p]) => {
+          if (!p.source) {
+            enviarCancel(r, p);
+            setTimeout(() => {
+              try {
+                p.call && p.call.close();
+              } catch (e) {}
+              try {
+                p.conn && p.conn.close();
+              } catch (e) {}
+            }, 450);
+          } else {
+            try {
+              p.call && p.call.close();
+            } catch (e) {}
+            try {
+              p.conn && p.conn.close();
+            } catch (e) {}
+          }
+        }));
+        participantes = {};
+        emEspera = {};
+        if (micStream) {
+          micStream.getTracks().forEach(t => t.stop());
+          micStream = null;
+        }
+        if (ctx) {
+          try {
+            ctx.close();
+          } catch (e) {}
+          ctx = null;
+          micSource = null;
+          holdOsc = null;
+          holdGain = null;
+        }
+        clearInterval(timerInt);
+        timerInt = null;
+        seg = 0;
+        muted = false;
+        emChamada = false;
+        holdTudo = false;
+        consultando = null;
+        chamandoPara = null;
+        chamadaAtendida = false;
+        listenOnly = false;
+        inicioChamadaTs = 0;
+        soltarWakeLock();
+        limparVideo();
+        avisouRelayVideo = false;
+        const ra = document.getElementById('relayAviso');
+        if (ra) ra.classList.add('hide');
+        if (masterAudio) {
+          try {
+            masterAudio.pause();
+            masterAudio.srcObject = null;
+          } catch (e) {}
+          masterAudio = null;
+        }
+        masterOut = null;
+        if (esperaEntrada) {
+          try {
+            esperaEntrada.close();
+          } catch (e) {}
+          esperaEntrada = null;
+        }
+        document.getElementById('banner').style.display = 'none';
+        if (usuario) {
+          const st = meuStatus();
+          db.ref('ramais/' + usuario.ramal).update({
+            status: st === 'dnd' ? 'dnd' : 'online'
+          });
+        }
+        fecharOverlay();
+      }
+
+      function toggleMute() {
+        if (!micStream) return;
+        muted = !muted;
+        micStream.getAudioTracks().forEach(t => t.enabled = !muted);
+        document.getElementById('muteTxt').innerText = muted ? "Mudo: ativado" : "Mudo";
+      }
+
+      /* ============ OVERLAY UI ============ */
+      function nomeDo(r) {
+        const x = ramaisCache[r];
+        return x ? x.nome : '';
+      }
+
+      function mostrarOverlayRecebendo(origem) {
+        document.getElementById('ov').classList.add('show');
+        document.getElementById('avatar').classList.add('ring');
+        document.getElementById('ovT1').innerText = "Chamada recebida";
+        document.getElementById('ovT2').innerText = origem;
+        document.getElementById('ovT3').innerText = nomeDo(origem);
+        document.getElementById('acRecebendo').classList.remove('hide');
+        document.getElementById('acEmChamada').classList.add('hide');
+        document.getElementById('timer').classList.add('hide');
+        document.getElementById('parts').innerHTML = '';
+        document.getElementById('gravBox').classList.add('hide');
+      }
+
+      function mostrarOverlayChamando(destino) {
+        document.getElementById('ov').classList.add('show');
+        document.getElementById('avatar').classList.add('ring');
+        document.getElementById('ovT1').innerText = "Chamando…";
+        document.getElementById('ovT2').innerText = destino;
+        document.getElementById('ovT3').innerText = nomeDo(destino);
+        document.getElementById('acRecebendo').classList.add('hide');
+        document.getElementById('acEmChamada').classList.remove('hide');
+        document.getElementById('timer').classList.add('hide');
+        document.getElementById('gravBox').classList.add('hide');
+        atualizarParts();
+      }
+
+      function conectadoUI() {
+        document.getElementById('ovT1').innerText = listenOnly ? "Ouvindo aviso geral" : "Em chamada";
+        document.getElementById('avatar').classList.remove('ring');
+        document.getElementById('acRecebendo').classList.add('hide');
+        document.getElementById('acEmChamada').classList.remove('hide');
+        document.getElementById('timer').classList.remove('hide');
+        if (!timerInt) {
+          timerInt = setInterval(() => {
+            seg++;
+            document.getElementById('timer').innerText = fmtDur(seg);
+          }, 1000);
+        }
+        atualizarParts();
+      }
+
+      function atualizarParts() {
+        const el = document.getElementById('parts');
+        const at = Object.keys(participantes),
+          he = Object.keys(emEspera);
+        el.innerHTML = at.map(r => `<span class="p">${ic('phone')}${esc(r)} ${esc(nomeDo(r))}</span>`).join('') +
+          he.map(r => `<span class="p hold">${ic('pause')}${esc(r)} ${esc(nomeDo(r))}</span>`).join('');
+        document.getElementById('btnAlternar').classList.toggle('hide', !he.length || holdTudo);
+        const todos = [...at, ...he];
+        if (todos.length === 1) {
+          document.getElementById('ovT2').innerText = todos[0];
+          document.getElementById('ovT3').innerText = nomeDo(todos[0]);
+        }
+        if (todos.length > 1) {
+          document.getElementById('ovT2').innerText = "Conferência";
+          document.getElementById('ovT3').innerText = todos.length + " participantes";
+        }
+      }
+
+      function fecharOverlay() {
+        document.getElementById('ov').classList.remove('hide');
+        document.getElementById('ov').classList.remove('show');
+        document.getElementById('painelExtra').classList.add('hide');
+        document.getElementById('gravBox').classList.add('hide');
+        document.getElementById('btnCompletar').classList.add('hide');
+        document.getElementById('btnAlternar').classList.add('hide');
+        document.getElementById('muteTxt').innerText = "Mudo";
+        document.getElementById('holdTxt').innerText = "Espera";
+        document.getElementById('timer').innerText = "00:00";
+        clearInterval(timerInt);
+        timerInt = null;
+        seg = 0;
+      }
+
+      /* ============ LISTA TELEFONE (favoritos + setores) ============ */
+      function toggleFav(n) {
+        const favs = usuario.favoritos || {};
+        if (favs[n]) delete favs[n];
+        else favs[n] = true;
+        usuario.favoritos = favs;
+        db.ref('usuarios/' + usuario.login + '/favoritos').set(favs);
+        renderTelefone();
+      }
+
+      function renderTelefone() {
+        if (!usuario) return;
+        const el = document.getElementById('listaTel');
+        const favs = usuario.favoritos || {};
+        const nums = Object.keys(ramaisCache).sort((a, b) => a - b);
+        const linha = n => {
+          const r = ramaisCache[n],
+            st = r.status || 'offline',
+            eu = (n === usuario.ramal);
+          return `<div class="item"><span class="st ${st}"></span>
+      <button class="fav ${favs[n]?'on':''}" title="Favorito" onclick="toggleFav('${esc(n)}')">${favs[n]?ic('star'):ic('staro')}</button>
+      <span class="num">${esc(n)}</span>
+      <span class="nome">${esc(r.nome)}${eu?' (você)':''}</span>
+      ${!eu&&st==='online'?`<button class="mini bg" onclick="ligarPara('${esc(n)}')">${ic('phone')}Ligar</button>
+      <button class="mini bgr" title="Ligar via app (Flutter)" onclick="pontLigar('${esc(n)}')">${ic('app')}</button>`:`<span class="tag ${st==='ocupado'?'oc':st==='dnd'?'dd':''}">${nomeSt(st)}</span>`}
+    </div>`;
+        };
+        let html = '';
+        const favList = nums.filter(n => favs[n]);
+        if (favList.length) html += '<div class="setorH">Favoritos</div>' + favList.map(linha).join('');
+        const setores = {};
+        nums.forEach(n => {
+          const s = (ramaisCache[n].setor || 'Sem setor');
+          (setores[s] = setores[s] || []).push(n);
+        });
+        Object.keys(setores).sort().forEach(s => {
+          html += `<div class="setorH">${esc(s)}${s!=='Sem setor'?` <button class="mini bp" style="padding:3px 9px;font-size:11px" onclick="ligarSetor('${esc(s)}')">${ic('users')}Chamar</button>`:''}</div>`;
+          html += setores[s].map(linha).join('');
+        });
+        el.innerHTML = html || '<div class="sub">Nenhum ramal.</div>';
+      }
+
+      /* ============ CHAT ============ */
+      function chaveChat(a, b) {
+        return [a, b].sort((x, y) => x - y).join('_');
+      }
+
+      function popularChatDest() {
+        if (!usuario) return;
+        const sel = document.getElementById('chatDest');
+        const atual = sel.value;
+        sel.innerHTML = '<option value="">Selecione…</option>' +
+          Object.keys(ramaisCache).filter(n => n !== usuario.ramal).sort((a, b) => a - b)
+          .map(n => `<option value="${esc(n)}">${esc(n)} — ${esc(ramaisCache[n].nome)}</option>`).join('');
+        if (atual) sel.value = atual;
+      }
+
+      function abrirChat() {
+        const dest = document.getElementById('chatDest').value;
+        if (chatRef) {
+          chatRef.off();
+          chatRef = null;
+        }
+        chatCom = dest;
+        const box = document.getElementById('chatMsgs');
+        if (!dest) {
+          box.innerHTML = '';
+          return;
+        }
+        chatRef = db.ref('chats/' + chaveChat(usuario.ramal, dest)).limitToLast(60);
+        chatRef.on('value', snap => {
+          const dados = snap.val() || {};
+          const keys = Object.keys(dados).sort((a, b) => dados[a].ts - dados[b].ts);
+          box.innerHTML = keys.map(k => {
+            const m = dados[k];
+            const corpo = m.img ? `<img src="${m.img}" alt="foto" onclick="verImagem(this.src)">` : m.audio ? `<audio controls preload="metadata" src="${m.audio}"></audio>` : esc(m.txt);
+            return `<div class="msg ${m.de===usuario.ramal?'eu':'ele'}">${corpo}<div class="h">${fmtTs(m.ts)}</div></div>`;
+          }).join('');
+          box.scrollTop = box.scrollHeight;
+          localStorage.setItem('chatVisto_' + dest, Date.now());
+          atualizarBadgeChat();
+        });
+      }
+      async function gravarAudioChat() {
+        if (!chatCom) return toast("Escolha primeiro com quem conversar.");
+        const btn = document.getElementById('btnChatMic');
+        if (chatRec && chatRec.state === 'recording') {
+          chatRec.stop();
+          return;
+        }
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: true
+          });
+          const chunks = [];
+          chatRec = new MediaRecorder(stream);
+          chatRec.ondataavailable = e => chunks.push(e.data);
+          chatRec.onstop = () => {
+            clearTimeout(chatRecTimer);
+            btn.classList.remove('recording');
+            stream.getTracks().forEach(t => t.stop());
+            const blob = new Blob(chunks, {
+              type: chatRec.mimeType || 'audio/webm'
+            });
+            chatRec = null;
+            if (blob.size > 700000) {
+              toast("Áudio muito longo — grave até 30 segundos.");
+              return;
+            }
+            const fr = new FileReader();
+            fr.onload = () => {
+              db.ref('chats/' + chaveChat(usuario.ramal, chatCom)).push({
+                de: usuario.ramal,
+                para: chatCom,
+                audio: fr.result,
+                ts: Date.now()
+              });
+            };
+            fr.readAsDataURL(blob);
+          };
+          chatRec.start();
+          btn.classList.add('recording');
+          toast("Gravando… toque de novo para enviar.");
+          chatRecTimer = setTimeout(() => {
+            if (chatRec && chatRec.state === 'recording') chatRec.stop();
+          }, 30000);
+        } catch (e) {
+          alert("Permita o acesso ao microfone!");
+        }
+      }
+
+      function enviarImagemChat(inp) {
+        const file = inp.files && inp.files[0];
+        inp.value = '';
+        if (!file) return;
+        if (!chatCom) return toast("Escolha primeiro com quem conversar.");
+        if (!file.type.startsWith('image/')) return toast("Envie apenas imagens.");
+        const img = new Image();
+        const fr = new FileReader();
+        fr.onload = () => {
+          img.src = fr.result;
+        };
+        img.onload = () => {
+          const MAX = 1000;
+          let w = img.width,
+            h = img.height;
+          if (w > MAX || h > MAX) {
+            const f = MAX / Math.max(w, h);
+            w = Math.round(w * f);
+            h = Math.round(h * f);
+          }
+          const cv = document.createElement('canvas');
+          cv.width = w;
+          cv.height = h;
+          cv.getContext('2d').drawImage(img, 0, 0, w, h);
+          let q = 0.75,
+            data = cv.toDataURL('image/jpeg', q);
+          while (data.length > 420000 && q > 0.35) {
+            q -= 0.1;
+            data = cv.toDataURL('image/jpeg', q);
+          }
+          if (data.length > 420000) return toast("Imagem muito pesada mesmo comprimida — tente outra.");
+          db.ref('chats/' + chaveChat(usuario.ramal, chatCom)).push({
+            de: usuario.ramal,
+            para: chatCom,
+            img: data,
+            ts: Date.now()
+          });
+          toast("Foto enviada.");
+        };
+        img.onerror = () => toast("Não foi possível ler essa imagem.");
+        fr.readAsDataURL(file);
+      }
+
+      function verImagem(src) {
+        document.getElementById('imgViewerImg').src = src;
+        document.getElementById('imgViewer').classList.add('show');
+      }
+
+      function enviarMsg() {
+        const txt = document.getElementById('chatTxt').value.trim();
+        if (!txt || !chatCom) return;
+        db.ref('chats/' + chaveChat(usuario.ramal, chatCom)).push({
+          de: usuario.ramal,
+          para: chatCom,
+          txt,
+          ts: Date.now()
+        });
+        document.getElementById('chatTxt').value = '';
+      }
+
+      function escutarTodosChats() {
+        db.ref('chats').on('value', snap => {
+          const all = snap.val() || {};
+          unread = {};
+          Object.keys(all).forEach(key => {
+            const [a, b] = key.split('_');
+            if (a !== usuario.ramal && b !== usuario.ramal) return;
+            const outro = a === usuario.ramal ? b : a;
+            const visto = Number(localStorage.getItem('chatVisto_' + outro) || 0);
+            Object.values(all[key]).forEach(m => {
+              if (m.de !== usuario.ramal && m.ts > visto) {
+                unread[outro] = (unread[outro] || 0) + 1;
+                if (m.ts > Date.now() - 4000) notificar("Mensagem do ramal " + m.de, m.txt || (m.img ? "Foto" : "Mensagem de voz"));
+              }
+            });
+          });
+          atualizarBadgeChat();
+        });
+      }
+
+      function atualizarBadgeChat() {
+        const total = Object.values(unread).reduce((s, v) => s + v, 0);
+        const bd = document.getElementById('bdChat');
+        if (total > 0) {
+          bd.innerText = total;
+          bd.classList.remove('hide');
+        } else bd.classList.add('hide');
+      }
+
+
+      /* ============ SALAS DE ESTUDO (estilo Discord) ============ */
+      let salasCache = {},
+        salaAtual = null,
+        salaRef = null,
+        salaLocalFallback = null;
+      let salaPeers = {}; // ramal -> {call,dest,source,ghost,sender}
+      let salaMudo = true,
+        salaVideoModo = null,
+        salaMicAtivo = false; // null|'cam'|'screen'
+      let salaCamStream = null,
+        salaTelaStream = null,
+        placeTrack = null;
+
+      function escutarSalas() {
+        db.ref('salas').on('value', snap => {
+          salasCache = snap.val() || {};
+          renderSalas();
+          if (salaAtual && !salasCache[salaAtual]) {
+            toast("A sala foi encerrada pelo criador.");
+            sairSala(true);
+          }
+          if (salaAtual) renderSalaDentro();
+        }, e => {
+          console.error(e);
+          document.getElementById('listaSalas').innerHTML =
+            '<div class="err">Sem permissão para acessar as salas (PERMISSION_DENIED).<br>Adicione o nó "salas" nas Regras do Realtime Database.</div>';
+        });
+      }
+
+      function renderSalas() {
+        const el = document.getElementById('listaSalas');
+        const ids = Object.keys(salasCache).sort((a, b) => (salasCache[b].criadaEm || 0) - (salasCache[a].criadaEm || 0));
+        if (!ids.length) {
+          el.innerHTML = '<div class="sub">Nenhuma sala criada ainda.</div>';
+          return;
+        }
+        el.innerHTML = ids.map(id => {
+          const sl = salasCache[id];
+          const n = Object.keys(sl.membros || {}).length;
+          const dono = sl.criador === usuario.ramal;
+          return `<div class="salaCard">
+      <div class="tit">${esc(sl.nome)} <span class="tag on">${n} online</span></div>
+      <div class="mat">${esc(sl.materia||'Sem matéria')} &middot; criada por ${esc(sl.criadorNome||sl.criador)}</div>
+      <div class="row">
+        <button class="mini bg" onclick="entrarSala('${id}')">Entrar</button>
+        ${dono?`<button class="mini br" style="flex:0 0 100px" onclick="excluirSala('${id}')">Excluir</button>`:''}
+      </div>
+    </div>`;
+        }).join('');
+      }
+      async function criarSala() {
+        const nome = document.getElementById('nsNome').value.trim();
+        const materia = document.getElementById('nsMateria').value.trim();
+        if (!nome) return toast("Dê um nome à sala.");
+        try {
+          const ref = db.ref('salas').push();
+          const dados = {
+            nome,
+            materia,
+            criador: usuario.ramal,
+            criadorNome: usuario.nome,
+            criadaEm: Date.now()
+          };
+          await ref.set(dados);
+          document.getElementById('nsNome').value = '';
+          document.getElementById('nsMateria').value = '';
+          entrarSala(ref.key, dados);
+        } catch (e) {
+          console.error(e);
+          toast(String(e).includes('PERMISSION') ? "Sem permissão no banco: adicione o nó \"salas\" nas Regras do Firebase." : "Erro ao criar sala: " + (e.message || e));
+        }
+      }
+      async function excluirSala(id) {
+        const sl = salasCache[id];
+        if (!sl || sl.criador !== usuario.ramal) return;
+        if (!confirm("Encerrar a sala \"" + sl.nome + "\" para todos?")) return;
+        await db.ref('salas/' + id).remove();
+      }
+
+      function placeholderTrack() {
+        if (placeTrack && placeTrack.readyState === 'live') return placeTrack;
+        const cv = document.createElement('canvas');
+        cv.width = 4;
+        cv.height = 4;
+        cv.getContext('2d').fillRect(0, 0, 4, 4);
+        placeTrack = cv.captureStream(2).getVideoTracks()[0];
+        return placeTrack;
+      }
+      async function entrarSala(id, dadosConhecidos) {
+        if (emChamada) return toast("Encerre a chamada antes de entrar numa sala.");
+        if (salaAtual) return toast("Você já está em uma sala.");
+        try {
+          try {
+            await prepararAudio(false);
+          } catch (e) {
+            alert("Não foi possível iniciar o áudio deste aparelho.");
+            return;
+          }
+          salaAtual = id;
+          salaMudo = true;
+          salaVideoModo = null;
+          salaMicAtivo = false;
+          salaLocalFallback = dadosConhecidos || salasCache[id] || {
+            nome: 'Sala',
+            materia: '',
+            criador: usuario.ramal,
+            criadorNome: usuario.nome
+          };
+          db.ref('ramais/' + usuario.ramal).update({
+            status: 'ocupado'
+          });
+
+          /* mostra a tela da sala IMEDIATAMENTE, sem esperar round-trip do banco */
+          document.getElementById('vSalasLista').classList.add('hide');
+          document.getElementById('vSalaDentro').classList.remove('hide');
+          renderSalaDentro();
+          pedirWakeLock();
+
+          const meuRef = db.ref('salas/' + id + '/membros/' + usuario.ramal);
+          await meuRef.set({
+            nome: usuario.nome,
+            ts: Date.now(),
+            mudo: true,
+            video: null
+          });
+          meuRef.onDisconnect().remove();
+
+          /* liga em malha para quem já está na sala */
+          const membros = (salasCache[id] && salasCache[id].membros) || {};
+          Object.keys(membros).forEach(r => {
+            if (r !== usuario.ramal) salaLigarPara(id, r);
+          });
+        } catch (e) {
+          console.error(e);
+          salaAtual = null;
+          document.getElementById('vSalaDentro').classList.add('hide');
+          document.getElementById('vSalasLista').classList.remove('hide');
+          toast(String(e).includes('PERMISSION') ? "Sem permissão no banco: adicione o nó \"salas\" nas Regras do Firebase." : "Erro ao entrar na sala: " + (e.message || e));
+        }
+      }
+
+      function salaOutStream(dest) {
+        return new MediaStream([dest.stream.getAudioTracks()[0], placeholderTrack()]);
+      }
+
+      function salaLigarPara(id, r) {
+        if (salaPeers[r]) return;
+        const dest = ctx.createMediaStreamDestination();
+        if (micSource) micSource.connect(dest);
+        const call = peer.call(PREFIX + r, salaOutStream(dest), {
+          metadata: {
+            sala: id
+          }
+        });
+        salaRegistrar(r, call, dest);
+      }
+      async function salaAtenderMesh(origem, call) {
+        try {
+          await prepararAudio(false);
+        } catch (e) {
+          call.close();
+          return;
+        }
+        const dest = ctx.createMediaStreamDestination();
+        if (micSource) micSource.connect(dest);
+        call.answer(salaOutStream(dest));
+        salaRegistrar(origem, call, dest);
+      }
+
+      function salaRegistrar(r, call, dest) {
+        const p = {
+          call,
+          dest,
+          source: null,
+          ghost: null,
+          sender: null
+        };
+        salaPeers[r] = p;
+        call.on('stream', rs => {
+          const g = new Audio();
+          g.srcObject = rs;
+          g.muted = true;
+          g.play().catch(() => {});
+          p.ghost = g;
+          if (rs.getAudioTracks().length) {
+            p.source = ctx.createMediaStreamSource(new MediaStream(rs.getAudioTracks()));
+            p.source.connect(masterOut);
+          }
+          p.remoteStream = rs;
+          /* aplica meu vídeo atual (se já ligado) a esta conexão nova */
+          aplicarMeuVideo(p);
+          renderSalaDentro();
+        });
+        call.on('close', () => {
+          try {
+            p.source && p.source.disconnect();
+          } catch (e) {}
+          try {
+            p.ghost && (p.ghost.srcObject = null);
+          } catch (e) {}
+          delete salaPeers[r];
+          renderSalaDentro();
+        });
+      }
+
+      function aplicarMeuVideo(p) {
+        try {
+          const pc = p.call && p.call.peerConnection;
+          if (!pc) {
+            console.warn('aplicarMeuVideo: sem peerConnection ainda para', p);
+            return;
+          }
+          const sender = pc.getSenders().find(sn => sn.track && sn.track.kind === 'video');
+          if (!sender) {
+            console.warn('aplicarMeuVideo: nenhum sender de vídeo encontrado');
+            return;
+          }
+          const trk = salaVideoModo === 'cam' ? (salaCamStream && salaCamStream.getVideoTracks()[0]) :
+            salaVideoModo === 'screen' ? (salaTelaStream && salaTelaStream.getVideoTracks()[0]) : placeholderTrack();
+          if (trk) sender.replaceTrack(trk);
+        } catch (e) {
+          console.error('Erro ao aplicar vídeo:', e);
+        }
+      }
+      async function salaAtivarMicrofone() {
+        if (salaMicAtivo) {
+          salaToggleMudo();
+          return;
+        }
+        try {
+          if (!ctx) {
+            await prepararAudio(false);
+          }
+          if (ctx.state === 'suspended') await ctx.resume();
+          if (!micStream) {
+            micStream = await navigator.mediaDevices.getUserMedia({
+              audio: true
+            });
+            micSource = ctx.createMediaStreamSource(micStream);
+          }
+          salaMicAtivo = true;
+          salaMudo = false;
+          Object.values(salaPeers).forEach(p => {
+            try {
+              micSource.connect(p.dest);
+            } catch (e) {
+              console.error('Erro ao ligar mic a', p, e);
+            }
+          });
+          micStream.getAudioTracks().forEach(t => t.enabled = true);
+          atualizarBotaoMic();
+          toast("Microfone ativado.");
+          if (salaAtual) db.ref('salas/' + salaAtual + '/membros/' + usuario.ramal + '/mudo').set(false);
+        } catch (e) {
+          console.error('Erro ao ativar microfone:', e);
+          toast("Não foi possível ativar o microfone: " + (e.message || e.name || e));
+        }
+      }
+
+      function atualizarBotaoMic() {
+        const btn = document.getElementById('btnSalaMudo'),
+          txt = document.getElementById('salaMudoTxt');
+        if (!salaMicAtivo) {
+          btn.classList.remove('ativo');
+          btn.classList.add('bo');
+          txt.innerText = "Ativar microfone";
+        } else {
+          btn.classList.remove('bo');
+          btn.classList.toggle('ativo', !salaMudo);
+          txt.innerText = salaMudo ? "Mudo: ativado" : "Microfone ligado";
+        }
+      }
+
+      function salaToggleMudo() {
+        if (!salaMicAtivo) return salaAtivarMicrofone();
+        if (!micStream) return;
+        salaMudo = !salaMudo;
+        micStream.getAudioTracks().forEach(t => t.enabled = !salaMudo);
+        atualizarBotaoMic();
+        if (salaAtual) db.ref('salas/' + salaAtual + '/membros/' + usuario.ramal + '/mudo').set(salaMudo);
+      }
+      async function salaToggleCamera() {
+        if (!salaAtual) return toast("Você não está em uma sala.");
+        if (salaVideoModo === 'cam') {
+          return salaDesligarVideo();
+        }
+        try {
+          if (ctx && ctx.state === 'suspended') await ctx.resume();
+          const st = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: 'user'
+            }
+          });
+          if (salaTelaStream) {
+            salaTelaStream.getTracks().forEach(t => t.stop());
+            salaTelaStream = null;
+          }
+          salaCamStream = st;
+          salaVideoModo = 'cam';
+          Object.values(salaPeers).forEach(aplicarMeuVideo);
+          db.ref('salas/' + salaAtual + '/membros/' + usuario.ramal + '/video').set('cam');
+          atualizarBotoesVideo();
+          renderSalaDentro();
+          toast("Câmera ligada.");
+        } catch (e) {
+          console.error('Erro ao ligar câmera:', e);
+          toast("Não foi possível acessar a câmera: " + (e.message || e.name || e));
+        }
+      }
+      async function salaToggleTela() {
+        if (!salaAtual) return toast("Você não está em uma sala.");
+        if (salaVideoModo === 'screen') {
+          return salaDesligarVideo();
+        }
+        if (!navigator.mediaDevices.getDisplayMedia) return toast("Este aparelho/navegador não permite espelhar a tela. Use um computador com Chrome, Edge ou Firefox.");
+        try {
+          if (ctx && ctx.state === 'suspended') await ctx.resume();
+          const st = await navigator.mediaDevices.getDisplayMedia({
+            video: true
+          });
+          if (salaCamStream) {
+            salaCamStream.getTracks().forEach(t => t.stop());
+            salaCamStream = null;
+          }
+          salaTelaStream = st;
+          salaVideoModo = 'screen';
+          st.getVideoTracks()[0].onended = () => salaDesligarVideo();
+          Object.values(salaPeers).forEach(aplicarMeuVideo);
+          db.ref('salas/' + salaAtual + '/membros/' + usuario.ramal + '/video').set('screen');
+          atualizarBotoesVideo();
+          renderSalaDentro();
+          toast("Compartilhando a tela.");
+        } catch (e) {
+          console.error('Erro ao espelhar tela:', e);
+          toast("Espelhamento cancelado ou não permitido: " + (e.message || e.name || e));
+        }
+      }
+
+      function salaDesligarVideo() {
+        if (salaCamStream) {
+          salaCamStream.getTracks().forEach(t => t.stop());
+          salaCamStream = null;
+        }
+        if (salaTelaStream) {
+          salaTelaStream.getTracks().forEach(t => t.stop());
+          salaTelaStream = null;
+        }
+        salaVideoModo = null;
+        Object.values(salaPeers).forEach(aplicarMeuVideo);
+        if (salaAtual) db.ref('salas/' + salaAtual + '/membros/' + usuario.ramal + '/video').set(null);
+        atualizarBotoesVideo();
+        renderSalaDentro();
+      }
+
+      function atualizarBotoesVideo() {
+        document.getElementById('btnSalaCam').classList.toggle('ativo', salaVideoModo === 'cam');
+        document.getElementById('btnSalaTela').classList.toggle('ativo', salaVideoModo === 'screen');
+      }
+
+      function sairSala(silencioso) {
+        if (!salaAtual) return;
+        const id = salaAtual;
+        salaAtual = null;
+        salaMicAtivo = false;
+        if (salaChatRef) {
+          salaChatRef.off();
+          salaChatRef = null;
+          salaChatSala = null;
+        }
+        db.ref('salas/' + id + '/membros/' + usuario.ramal).remove();
+        Object.values(salaPeers).forEach(p => {
+          try {
+            p.call.close();
+          } catch (e) {}
+        });
+        salaPeers = {};
+        salaDesligarVideo();
+        salaMudo = false;
+        document.getElementById('salaMudoTxt').innerText = "Mudo";
+        document.getElementById('btnSalaMudo').classList.remove('ativo');
+        if (micStream) micStream.getAudioTracks().forEach(t => t.enabled = true);
+        db.ref('ramais/' + usuario.ramal).update({
+          status: meuStatus() === 'dnd' ? 'dnd' : 'online'
+        });
+        document.getElementById('vSalaDentro').classList.add('hide');
+        document.getElementById('vSalasLista').classList.remove('hide');
+        soltarWakeLock();
+        if (!silencioso) toast("Você saiu da sala.");
+      }
+
+      function renderSalaDentro() {
+        if (!salaAtual) return;
+        atualizarBotaoMic();
+        escutarSalaChat();
+        const sl = salasCache[salaAtual] || salaLocalFallback || {
+          nome: 'Sala',
+          materia: '',
+          membros: {},
+          criador: usuario.ramal,
+          criadorNome: usuario.nome
+        };
+        document.getElementById('salaTitulo').innerText = sl.nome;
+        document.getElementById('salaMateria').innerText = (sl.materia ? sl.materia + " · " : "") + "criada por " + (sl.criadorNome || sl.criador);
+        const membros = sl.membros || {};
+        /* participantes */
+        document.getElementById('salaMembros').innerHTML = Object.keys(membros).sort((a, b) => a - b).map(r => {
+          const m = membros[r];
+          return `<div class="membroRow"><span class="st online"></span>
+      <span class="num">${esc(r)}</span><span style="flex:1">${esc(m.nome)}${r===usuario.ramal?' (você)':''}</span>
+      ${m.video==='cam'?'<span class="tag on">câmera</span>':m.video==='screen'?'<span class="tag oc">tela</span>':''}
+      ${m.mudo?'<span class="mud">MUDO</span>':''}</div>`;
+        }).join('');
+        /* grade de vídeos */
+        const grade = document.getElementById('gradeVideos');
+        let tiles = '';
+        if (salaVideoModo) tiles += `<div class="tile"><video id="tile-eu" autoplay playsinline muted></video><span class="rot">Você</span></div>`;
+        Object.keys(salaPeers).forEach(r => {
+          const mv = (membros[r] || {}).video;
+          if (mv && salaPeers[r].remoteStream) tiles += `<div class="tile"><video id="tile-${r}" autoplay playsinline muted></video><span class="rot">${esc(r)}</span></div>`;
+        });
+        grade.innerHTML = tiles;
+        if (salaVideoModo) {
+          const v = document.getElementById('tile-eu');
+          if (v) v.srcObject = salaVideoModo === 'cam' ? salaCamStream : salaTelaStream;
+        }
+        Object.keys(salaPeers).forEach(r => {
+          const v = document.getElementById('tile-' + r);
+          if (v && salaPeers[r].remoteStream) v.srcObject = salaPeers[r].remoteStream;
+        });
+        /* tópicos */
+        escutarTopicos();
+      }
+      let topRef = null,
+        topSala = null;
+
+      function escutarTopicos() {
+        if (topSala === salaAtual) return;
+        if (topRef) topRef.off();
+        topSala = salaAtual;
+        topRef = db.ref('salas/' + salaAtual + '/topicos');
+        topRef.on('value', snap => {
+          const dados = snap.val() || {};
+          const el = document.getElementById('salaTopicos');
+          const keys = Object.keys(dados).sort((a, b) => dados[a].ts - dados[b].ts);
+          if (!keys.length) {
+            el.innerHTML = '<div class="sub">Nenhum assunto anotado.</div>';
+            return;
+          }
+          const sl = salasCache[salaAtual] || {};
+          el.innerHTML = keys.map(k => {
+            const t = dados[k];
+            const pode = t.de === usuario.ramal || sl.criador === usuario.ramal;
+            return `<div class="topico"><div style="flex:1"><div class="txt">${esc(t.txt)}</div>
+        <div class="quem">${esc(t.deNome||t.de)} · ${fmtTs(t.ts)}</div></div>
+        ${pode?`<button class="mini bgr" style="padding:4px 9px" onclick="delTopico('${k}')">×</button>`:''}</div>`;
+          }).join('');
+        });
+      }
+
+      function addTopico() {
+        const txt = document.getElementById('inpTopico').value.trim();
+        if (!txt || !salaAtual) return;
+        db.ref('salas/' + salaAtual + '/topicos').push({
+          txt,
+          de: usuario.ramal,
+          deNome: usuario.nome,
+          ts: Date.now()
+        });
+        document.getElementById('inpTopico').value = '';
+      }
+
+      function delTopico(k) {
+        if (salaAtual) db.ref('salas/' + salaAtual + '/topicos/' + k).remove();
+      }
+
+      let salaChatRef = null,
+        salaChatSala = null;
+
+      function escutarSalaChat() {
+        if (salaChatSala === salaAtual) return;
+        if (salaChatRef) salaChatRef.off();
+        salaChatSala = salaAtual;
+        if (!salaAtual) return;
+        salaChatRef = db.ref('salas/' + salaAtual + '/mensagens').limitToLast(80);
+        salaChatRef.on('value', snap => {
+          const dados = snap.val() || {};
+          const box = document.getElementById('salaChatMsgs');
+          if (!box) return;
+          const keys = Object.keys(dados).sort((a, b) => dados[a].ts - dados[b].ts);
+          box.innerHTML = keys.map(k => {
+            const m = dados[k];
+            return `<div class="msg ${m.de===usuario.ramal?'eu':'ele'}">${esc(m.txt)}<div class="h">${esc(m.deNome||m.de)} · ${fmtTs(m.ts)}</div></div>`;
+          }).join('');
+          box.scrollTop = box.scrollHeight;
+        }, e => console.error(e));
+      }
+
+      function salaEnviarMsg() {
+        const inp = document.getElementById('salaChatTxt');
+        const txt = inp.value.trim();
+        if (!txt || !salaAtual) return;
+        db.ref('salas/' + salaAtual + '/mensagens').push({
+          txt,
+          de: usuario.ramal,
+          deNome: usuario.nome,
+          ts: Date.now()
+        });
+        inp.value = '';
+      }
+      window.addEventListener('beforeunload', () => {
+        if (salaAtual) db.ref('salas/' + salaAtual + '/membros/' + usuario.ramal).remove();
+      });
+
+      function renderAdmin() {}
+    </script>
+
+  </body>
+
+</html>
