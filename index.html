@@ -561,7 +561,8 @@ async function pontPrepararConexao(aoReceberAudio, comVideo) {
     toast('Canal de chat conectado com o app.');
     pontDataChannel = ev.channel;
     pontDataChannel.onmessage = (msg) => pontExibirMsg('eles', msg.data);
-    pontDataChannel.onopen = () => console.log('[ponte] datachannel aberto');
+    pontDataChannel.onopen = () => toast('Chat pronto.');
+    pontDataChannel.onerror = (e) => console.error('[ponte] erro no datachannel:', e);
   };
 }
 
@@ -575,6 +576,8 @@ async function pontLigar(destino, comVideo) {
 
   pontDataChannel = pontPC.createDataChannel('chat');
   pontDataChannel.onmessage = (msg) => pontExibirMsg('eles', msg.data);
+  pontDataChannel.onopen = () => toast('Chat pronto.');
+  pontDataChannel.onerror = (e) => console.error('[ponte] erro no datachannel:', e);
 
   pontOutro = destino;
   pontMostrarOverlay(destino, 'Chamando…');
@@ -598,11 +601,14 @@ async function pontLigar(destino, comVideo) {
     video: !!comVideo,
     ts: Date.now()
   });
+  toast('Oferta enviada para o ramal ' + destino + '. Aguardando resposta…');
 
+  let jaRespondeu = false;
   db.ref('sinalizacao/' + destino + '/' + usuario.ramal).on('value', async (snap) => {
     const dados = snap.val();
     if (!dados || !pontPC) return;
     if (dados.resposta && pontPC.signalingState !== 'stable') {
+      if (!jaRespondeu) { toast('Resposta recebida — conectando…'); jaRespondeu = true; }
       await pontPC.setRemoteDescription(new RTCSessionDescription(dados.resposta));
     }
     if (dados.candidatosDestino) {
@@ -709,7 +715,15 @@ function pontExibirMsg(de, txt) {
 function pontEnviarChat() {
   const inp = document.getElementById('pontChatTxt');
   const txt = inp.value.trim();
-  if (!txt || !pontDataChannel || pontDataChannel.readyState !== 'open') return;
+  if (!txt) return;
+  if (!pontDataChannel) {
+    toast('O canal de chat ainda não foi criado com o app.');
+    return;
+  }
+  if (pontDataChannel.readyState !== 'open') {
+    toast('Chat ainda conectando (' + pontDataChannel.readyState + ')… espere alguns segundos.');
+    return;
+  }
   pontDataChannel.send(txt);
   pontExibirMsg('eu', txt);
   inp.value = '';
