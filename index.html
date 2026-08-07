@@ -397,6 +397,7 @@ audio.rec{width:100%;margin-top:8px}
   <div class="t2" id="pontT2">---</div>
   <div class="t3" id="pontT3">Conectando…</div>
   <div id="pontTimer" class="hide" style="font-size:16px;color:var(--call);margin-bottom:16px;font-family:var(--mono);font-weight:600">00:00</div>
+  <button class="bg hide" id="pontBtnDesbloquear" onclick="pontDesbloquearAudio()" style="width:100%;margin-bottom:14px;padding:12px;border-radius:8px;border:none;color:#fff;font-weight:700;font-size:15px;cursor:pointer">🔊 Toque aqui para ouvir</button>
   <div class="acoes">
     <button class="bgr" id="pontBtnMute" onclick="pontMudo()"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v4"/></svg>Mudo</button>
     <button class="bgr" id="pontBtnCam" onclick="pontToggleCamera()"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m22 8-6 4 6 4V8z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>Câmera</button>
@@ -469,11 +470,22 @@ let ICE={iceServers:[
 let pontPC = null, pontMicStream = null, pontCamStream = null, pontOutro = null, pontTimerInt = null, pontSeg = 0;
 let pontDataChannel = null, pontVideoLigado = false;
 
+function pontDesbloquearAudio() {
+  const audioEl = document.getElementById('pontRemoteAudio');
+  const videoEl = document.getElementById('pontVideoRemoto');
+  const btn = document.getElementById('pontBtnDesbloquear');
+  Promise.all([
+    audioEl.play().catch(() => {}),
+    videoEl.play().catch(() => {}),
+  ]).then(() => btn.classList.add('hide'));
+}
+
 function pontMostrarOverlay(destino, titulo) {
   document.getElementById('pontT2').innerText = destino;
   document.getElementById('pontT3').innerText = titulo;
   document.getElementById('pontAvatar').classList.add('ring');
   document.getElementById('pontTimer').classList.add('hide');
+  document.getElementById('pontBtnDesbloquear').classList.add('hide');
   document.getElementById('ovPonte').classList.add('show');
 }
 function pontConectadoUI() {
@@ -490,6 +502,7 @@ function pontConectadoUI() {
 function pontFecharOverlay() {
   document.getElementById('ovPonte').classList.remove('show');
   document.getElementById('pontBtnMute').classList.remove('ativo');
+  document.getElementById('pontBtnDesbloquear').classList.add('hide');
   document.getElementById('pontTimer').innerText = '00:00';
   clearInterval(pontTimerInt); pontTimerInt = null;
 }
@@ -518,13 +531,22 @@ async function pontPrepararConexao(aoReceberAudio, comVideo) {
     toast('Recebendo ' + ev.track.kind + ' do app…');
     if (ev.track.kind === 'video') {
       const vr = document.getElementById('pontVideoRemoto');
-      vr.srcObject = ev.streams[0]; vr.play().catch(() => {});
+      vr.srcObject = ev.streams[0];
+      vr.play().then(() => {
+        document.getElementById('pontBtnDesbloquear').classList.add('hide');
+      }).catch(() => {
+        document.getElementById('pontBtnDesbloquear').classList.remove('hide');
+      });
       document.getElementById('pontVideoArea').classList.remove('hide');
       document.getElementById('pontAvatar').classList.add('hide');
     } else {
       const audioEl = document.getElementById('pontRemoteAudio');
       audioEl.srcObject = ev.streams[0];
-      audioEl.play().catch((err) => toast('Autoplay bloqueado: toque na tela.'));
+      audioEl.play().then(() => {
+        document.getElementById('pontBtnDesbloquear').classList.add('hide');
+      }).catch(() => {
+        document.getElementById('pontBtnDesbloquear').classList.remove('hide');
+      });
     }
     aoReceberAudio();
   };
