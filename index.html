@@ -515,6 +515,7 @@ async function pontPrepararConexao(aoReceberAudio, comVideo) {
   }
 
   pontPC.ontrack = (ev) => {
+    toast('Recebendo ' + ev.track.kind + ' do app…');
     if (ev.track.kind === 'video') {
       const vr = document.getElementById('pontVideoRemoto');
       vr.srcObject = ev.streams[0]; vr.play().catch(() => {});
@@ -523,14 +524,22 @@ async function pontPrepararConexao(aoReceberAudio, comVideo) {
     } else {
       const audioEl = document.getElementById('pontRemoteAudio');
       audioEl.srcObject = ev.streams[0];
-      audioEl.play().catch(() => {});
+      audioEl.play().catch((err) => toast('Autoplay bloqueado: toque na tela.'));
     }
     aoReceberAudio();
   };
 
+  pontPC.oniceconnectionstatechange = () => {
+    console.log('[ponte] ICE state:', pontPC.iceConnectionState);
+    if (pontPC.iceConnectionState === 'failed') toast('Falha na conexão ICE — provavelmente TURN bloqueado.');
+    if (pontPC.iceConnectionState === 'disconnected') toast('Conexão perdida com o app.');
+  };
+
   pontPC.ondatachannel = (ev) => {
+    toast('Canal de chat conectado com o app.');
     pontDataChannel = ev.channel;
     pontDataChannel.onmessage = (msg) => pontExibirMsg('eles', msg.data);
+    pontDataChannel.onopen = () => console.log('[ponte] datachannel aberto');
   };
 }
 
@@ -592,6 +601,7 @@ async function pontEscutarChamadas() {
     const origem = snap.key;
     const dados = snap.val();
     if (!dados || !dados.oferta) return;
+    toast('Chamada do app detectada (ramal ' + origem + ', vídeo: ' + (dados.video === true) + ')');
 
     try { await pontPrepararConexao(pontConectadoUI, dados.video === true); }
     catch (e) { toast('Chamada do app recebida, mas o microfone foi negado.'); return; }
