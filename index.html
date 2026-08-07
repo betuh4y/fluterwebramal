@@ -746,7 +746,7 @@ function notificar(titulo,corpo){
 let actx=null, ringInt=null;
 function tocarRing(){
   if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)();
-  const beep=()=>{const o=actx.createOscillator(),g=actx.createGain();o.type="sine";o.frequency.value=850;g.gain.value=.25;o.connect(g);g.connect(amasterOut);o.start();o.frequency.setValueAtTime(650,actx.currentTime+.35);o.stop(actx.currentTime+.7);};
+  const beep=()=>{const o=actx.createOscillator(),g=actx.createGain();o.type="sine";o.frequency.value=850;g.gain.value=.25;o.connect(g);g.connect(actx.destination);o.start();o.frequency.setValueAtTime(650,actx.currentTime+.35);o.stop(actx.currentTime+.7);};
   beep();ringInt=setInterval(beep,2000);
   if(navigator.vibrate)navigator.vibrate([400,200,400]);
 }
